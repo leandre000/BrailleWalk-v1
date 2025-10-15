@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Animated, AccessibilityInfo } from 'react-native';
 
 interface WaveformProps {
   isActive?: boolean;
@@ -10,9 +10,28 @@ export default function Waveform({ isActive = true, color = '#FFFFFF' }: Wavefor
   const animations = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(0.3))
   ).current;
+  const [reduceMotion, setReduceMotion] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!isActive) {
+    // Listen to reduce motion preference
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setReduceMotion(enabled);
+    });
+
+    return () => {
+      mounted = false;
+      // removeEventListener deprecated signature; new API returns subscription with remove
+      // @ts-ignore
+      if (typeof sub?.remove === 'function') sub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isActive || reduceMotion) {
       animations.forEach(anim => anim.setValue(0.3));
       return;
     }
@@ -38,7 +57,7 @@ export default function Waveform({ isActive = true, color = '#FFFFFF' }: Wavefor
     animations.forEach((anim, index) => {
       animateBar(anim, index * 100);
     });
-  }, [isActive]);
+  }, [isActive, reduceMotion]);
 
   return (
     <View style={styles.container}>
