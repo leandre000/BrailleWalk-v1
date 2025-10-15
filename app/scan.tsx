@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Scan, Camera, Volume2, RotateCcw, Zap, BookOpen, Package } from 'lucide-react-native';
+import { Camera as ExpoCamera, CameraType } from 'expo-camera';
+import { Scan, Camera as CameraIcon, Volume2, RotateCcw, Zap, BookOpen, Package } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
@@ -29,7 +29,7 @@ interface DetectedObject {
 export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission] = ExpoCamera.useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scanMode, setScanMode] = useState<ScanMode>('auto');
   const [result, setResult] = useState<string>('');
@@ -273,10 +273,10 @@ export default function ScanScreen() {
               </View>
             ) : (
               Platform.OS !== 'web' ? (
-                <CameraView
+                <ExpoCamera
                   ref={cameraRef}
                   style={styles.camera}
-                  facing="back"
+                  type={CameraType.back}
                 />
               ) : (
                 <View style={styles.mockCamera}>
@@ -327,7 +327,7 @@ export default function ScanScreen() {
                 accessibilityLabel="Start scan"
                 accessibilityHint="Start scanning the current view"
               >
-                <Camera size={24} color="#FFFFFF" />
+                <CameraIcon size={24} color="#FFFFFF" />
                 <Text style={styles.scanButtonText}>Scan Now</Text>
               </TouchableOpacity>
             )}
