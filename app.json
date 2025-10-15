@@ -1,0 +1,97 @@
+{
+  "expo": {
+    "name": "BrailleWalk",
+    "slug": "braillewalk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0047AB"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.braillewalk.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "BrailleWalk uses the camera to provide real-time assistance for visually impaired users, including text recognition, object detection, and navigation guidance.",
+        "NSMicrophoneUsageDescription": "BrailleWalk uses the microphone for voice commands and authentication features.",
+        "NSLocationWhenInUseUsageDescription": "BrailleWalk uses location services to provide navigation assistance and emergency location sharing with caregivers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "BrailleWalk uses location services to provide navigation assistance and emergency location sharing with caregivers.",
+        "NSContactsUsageDescription": "BrailleWalk accesses contacts to enable emergency contact features for caregivers.",
+        "NSSpeechRecognitionUsageDescription": "BrailleWalk uses speech recognition for voice commands and accessibility features."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0047AB"
+      },
+      "package": "com.braillewalk.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "BrailleWalk uses the camera to provide real-time assistance for visually impaired users."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "BrailleWalk uses location services to provide navigation assistance and emergency location sharing with caregivers."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0047AB",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "BrailleWalk uses the microphone for voice commands and authentication features."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "braillewalk-project"
+      }
+    }
+  }
+}
