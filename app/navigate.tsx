@@ -56,6 +56,7 @@ export default function NavigateScreen() {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
+      try { Speech.stop(); } catch {}
     };
   }, []);
 
@@ -83,7 +84,11 @@ export default function NavigateScreen() {
       const currentInstruction = navigationInstructions[instructionIndex];
       setNavState(currentInstruction.type);
       setInstruction(currentInstruction.text);
-      setDirection(currentInstruction.direction || null);
+      setDirection(
+        currentInstruction.direction === 'left' || currentInstruction.direction === 'right'
+          ? currentInstruction.direction
+          : null
+      );
       
       // Set obstacle type for obstacle instructions
       if (currentInstruction.type === 'obstacle') {
@@ -103,6 +108,7 @@ export default function NavigateScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       
+      try { Speech.stop(); } catch {}
       Speech.speak(currentInstruction.text, { rate: 0.6 });
       instructionIndex++;
       
@@ -118,6 +124,7 @@ export default function NavigateScreen() {
       clearTimeout(speechTimeoutRef.current);
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try { Speech.stop(); } catch {}
     Speech.speak('Exiting navigation mode');
     router.back();
   };
@@ -127,9 +134,11 @@ export default function NavigateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     if (isPaused) {
+      try { Speech.stop(); } catch {}
       Speech.speak('Navigation resumed');
       startNavigationSequence();
     } else {
+      try { Speech.stop(); } catch {}
       Speech.speak('Navigation paused');
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
@@ -139,6 +148,7 @@ export default function NavigateScreen() {
 
   const handleRepeatInstruction = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try { Speech.stop(); } catch {}
     Speech.speak(instruction, { rate: 0.6 });
   };
 
