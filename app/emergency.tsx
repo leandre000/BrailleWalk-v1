@@ -58,6 +58,7 @@ export default function EmergencyScreen() {
     initializeLocation();
     
     const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
+    try { Speech.stop(); } catch {}
     Speech.speak(welcomeMessage, { rate: 0.7 });
     
     // Provide urgent haptic feedback for emergency mode
@@ -67,6 +68,7 @@ export default function EmergencyScreen() {
     return () => {
       if (callTimerRef.current) clearTimeout(callTimerRef.current);
       if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+      try { Speech.stop(); } catch {}
     };
   }, []);
 
@@ -76,7 +78,6 @@ export default function EmergencyScreen() {
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
-          maximumAge: 10000,
         });
         setCurrentLocation(location);
       }
@@ -88,6 +89,7 @@ export default function EmergencyScreen() {
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try { Speech.stop(); } catch {}
     Speech.speak(`Selected ${contact.name}, ${contact.relationship}`);
     
     // Send emergency message first
@@ -99,6 +101,7 @@ export default function EmergencyScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     
     const message = emergencyMessages[emergencyType];
+    try { Speech.stop(); } catch {}
     Speech.speak(`Sending emergency message and location to ${contact.name}`);
 
     // Create emergency message record
@@ -114,6 +117,7 @@ export default function EmergencyScreen() {
     // Simulate sending message and location
     locationTimeoutRef.current = setTimeout(async () => {
       setEmergencyState('message-sent');
+      try { Speech.stop(); } catch {}
       Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`);
       
       setTimeout(() => {
@@ -125,10 +129,12 @@ export default function EmergencyScreen() {
   const initiateCall = (contact: Contact) => {
     setEmergencyState('calling');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    try { Speech.stop(); } catch {}
     Speech.speak(`Calling ${contact.name}...`);
     
     setTimeout(() => {
       setEmergencyState('in-call');
+      try { Speech.stop(); } catch {}
       Speech.speak(`Connected with ${contact.name}. Call in progress.`);
       
       // Start call timer
@@ -150,6 +156,7 @@ export default function EmergencyScreen() {
     }
     setEmergencyState('ended');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try { Speech.stop(); } catch {}
     Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`);
     
     setTimeout(() => {
@@ -161,6 +168,7 @@ export default function EmergencyScreen() {
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try { Speech.stop(); } catch {}
     Speech.speak('Exiting emergency mode');
     router.back();
   };
@@ -168,6 +176,7 @@ export default function EmergencyScreen() {
   const handleEmergencyTypeChange = (type: EmergencyType) => {
     setEmergencyType(type);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try { Speech.stop(); } catch {}
     Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`);
   };
 
