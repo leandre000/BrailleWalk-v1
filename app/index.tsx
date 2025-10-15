@@ -22,6 +22,7 @@ export default function AuthScreen() {
   useEffect(() => {
     // Welcome message with improved accessibility
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
+    try { Speech.stop(); } catch {}
     Speech.speak(welcomeMessage, { rate: speechRate });
     
     // Provide haptic feedback for app launch
@@ -31,6 +32,7 @@ export default function AuthScreen() {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
+      try { Speech.stop(); } catch {}
     };
   }, []);
 
@@ -46,6 +48,7 @@ export default function AuthScreen() {
       ? 'Analyzing face recognition...'
       : 'Authenticating with voice and face recognition...';
     
+    try { Speech.stop(); } catch {}
     Speech.speak(authMessage, { rate: speechRate });
 
     // Simulate authentication process with more realistic timing
@@ -62,6 +65,7 @@ export default function AuthScreen() {
           ? 'Face recognized successfully. Welcome back to BrailleWalk.'
           : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
         
+        try { Speech.stop(); } catch {}
         Speech.speak(successMessage, { rate: speechRate });
         
         setTimeout(() => {
@@ -73,6 +77,7 @@ export default function AuthScreen() {
         Vibration.vibrate([0, 200, 100, 200]); // Error vibration pattern
         
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
+        try { Speech.stop(); } catch {}
         Speech.speak(failMessage, { rate: speechRate });
         
         setTimeout(() => {
