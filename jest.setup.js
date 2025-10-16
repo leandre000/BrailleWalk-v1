@@ -1,19 +1,3 @@
-// Mock expo-modules-core before jest-expo tries to use it
-jest.mock('expo-modules-core', () => {
-  const actualCore = jest.requireActual('expo-modules-core');
-  return {
-    ...actualCore,
-    requireNativeModule: jest.fn(() => ({})),
-    NativeModulesProxy: {},
-    EventEmitter: jest.fn(() => ({
-      addListener: jest.fn(),
-      removeAllListeners: jest.fn(),
-    })),
-    Subscription: jest.fn(),
-    UnavailabilityError: class UnavailabilityError extends Error {},
-  };
-});
-
 // Mock expo-linear-gradient
 jest.mock('expo-linear-gradient', () => {
   const React = require('react');

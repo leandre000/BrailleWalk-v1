@@ -10,8 +10,10 @@ module.exports = {
     '!**/node_modules/**',
     '!**/__tests__/**'
   ],
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ['@testing-library/react-native/extend-expect'],
+  setupFilesAfterEnv: [
+    '@testing-library/react-native/extend-expect',
+    '<rootDir>/jest.setup.js'
+  ],
   testMatch: [
     '**/__tests__/**/*.test.{js,jsx,ts,tsx}',
     '**/*.test.{js,jsx,ts,tsx}'
