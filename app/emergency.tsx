@@ -54,21 +54,26 @@ export default function EmergencyScreen() {
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Initialize location services
     initializeLocation();
     
     const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
-    try { Speech.stop(); } catch {}
-    Speech.speak(welcomeMessage, { rate: 0.7 });
-    
-    // Provide urgent haptic feedback for emergency mode
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Vibration.vibrate([0, 200, 100, 200, 100, 200]);
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.stop();
+        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        Vibration.vibrate([0, 200, 100, 200, 100, 200]);
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     
     return () => {
-      if (callTimerRef.current) clearTimeout(callTimerRef.current);
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
       if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
-      try { Speech.stop(); } catch {}
+      if (Platform.OS !== 'web') {
+        try { Speech.stop(); } catch {}
+      }
     };
   }, []);
 
@@ -88,23 +93,39 @@ export default function EmergencyScreen() {
 
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try { Speech.stop(); } catch {}
-    Speech.speak(`Selected ${contact.name}, ${contact.relationship}`);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Speech.stop();
+        Speech.speak(`Selected ${contact.name}, ${contact.relationship}`);
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     
-    // Send emergency message first
     await sendEmergencyMessage(contact);
   };
 
   const sendEmergencyMessage = async (contact: Contact) => {
     setEmergencyState('sending-location');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     
     const message = emergencyMessages[emergencyType];
-    try { Speech.stop(); } catch {}
-    Speech.speak(`Sending emergency message and location to ${contact.name}`);
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.stop();
+        Speech.speak(`Sending emergency message and location to ${contact.name}`);
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
+    }
 
-    // Create emergency message record
     const emergencyMessage: EmergencyMessage = {
       type: emergencyType,
       message,
@@ -112,13 +133,18 @@ export default function EmergencyScreen() {
       timestamp: Date.now()
     };
     
-    setEmergencyHistory(prev => [emergencyMessage, ...prev.slice(0, 9)]); // Keep last 10
+    setEmergencyHistory(prev => [emergencyMessage, ...prev.slice(0, 9)]);
 
-    // Simulate sending message and location
     locationTimeoutRef.current = setTimeout(async () => {
       setEmergencyState('message-sent');
-      try { Speech.stop(); } catch {}
-      Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`);
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.stop();
+          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`);
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
       
       setTimeout(() => {
         initiateCall(contact);
@@ -128,22 +154,32 @@ export default function EmergencyScreen() {
 
   const initiateCall = (contact: Contact) => {
     setEmergencyState('calling');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    try { Speech.stop(); } catch {}
-    Speech.speak(`Calling ${contact.name}...`);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+        Speech.stop();
+        Speech.speak(`Calling ${contact.name}...`);
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     
     setTimeout(() => {
       setEmergencyState('in-call');
-      try { Speech.stop(); } catch {}
-      Speech.speak(`Connected with ${contact.name}. Call in progress.`);
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.stop();
+          Speech.speak(`Connected with ${contact.name}. Call in progress.`);
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
       
-      // Start call timer
       setCallDuration(0);
       callTimerRef.current = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
       
-      // Actually make the call
       if (Platform.OS !== 'web') {
         Linking.openURL(`tel:${contact.phone}`);
       }
@@ -155,9 +191,15 @@ export default function EmergencyScreen() {
       clearInterval(callTimerRef.current);
     }
     setEmergencyState('ended');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    try { Speech.stop(); } catch {}
-    Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Speech.stop();
+        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`);
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     
     setTimeout(() => {
       router.back();
@@ -167,17 +209,29 @@ export default function EmergencyScreen() {
   const handleQuit = () => {
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try { Speech.stop(); } catch {}
-    Speech.speak('Exiting emergency mode');
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Speech.stop();
+        Speech.speak('Exiting emergency mode');
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     router.back();
   };
 
   const handleEmergencyTypeChange = (type: EmergencyType) => {
     setEmergencyType(type);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try { Speech.stop(); } catch {}
-    Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Speech.stop();
+        Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`);
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
   };
 
   const formatCallDuration = (seconds: number) => {
@@ -190,7 +244,6 @@ export default function EmergencyScreen() {
     <>
       <Text style={styles.modeText}>Emergency Contact Selection</Text>
       
-      {/* Emergency Type Selector */}
       <View style={styles.emergencyTypeSelector}>
         <Text style={styles.selectorLabel}>Emergency Type:</Text>
         <View style={styles.typeButtons}>
@@ -281,7 +334,6 @@ export default function EmergencyScreen() {
         Call in progress - Duration: {formatCallDuration(callDuration)}
       </Text>
       
-      {/* Call Controls */}
       <View style={styles.callControls}>
         <TouchableOpacity
           style={styles.endCallButton}
@@ -292,7 +344,6 @@ export default function EmergencyScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* Location Info */}
       {currentLocation && (
         <View style={styles.locationInfo}>
           <MapPin size={16} color="#FFFFFF" opacity={0.7} />
@@ -316,20 +367,19 @@ export default function EmergencyScreen() {
         Call ended successfully. Duration: {formatCallDuration(callDuration)}
       </Text>
       
-      {/* Emergency Summary */}
       <View style={styles.emergencySummary}>
         <Text style={styles.summaryTitle}>Emergency Summary:</Text>
         <Text style={styles.summaryText}>
-          • Contact: {selectedContact?.name}
+          - Contact: {selectedContact?.name}
         </Text>
         <Text style={styles.summaryText}>
-          • Type: {emergencyType.charAt(0).toUpperCase() + emergencyType.slice(1)}
+          - Type: {emergencyType.charAt(0).toUpperCase() + emergencyType.slice(1)}
         </Text>
         <Text style={styles.summaryText}>
-          • Message sent and location shared
+          - Message sent and location shared
         </Text>
         <Text style={styles.summaryText}>
-          • Call duration: {formatCallDuration(callDuration)}
+          - Call duration: {formatCallDuration(callDuration)}
         </Text>
       </View>
     </>
