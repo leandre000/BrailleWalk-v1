@@ -22,9 +22,13 @@ export default function AuthScreen() {
   useEffect(() => {
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
     if (Platform.OS !== 'web') {
-      try { Speech.stop(); } catch {}
-      Speech.speak(welcomeMessage, { rate: speechRate });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      try {
+        Speech.stop();
+        Speech.speak(welcomeMessage, { rate: speechRate });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch (error) {
+        console.log('Speech/Haptics not available:', error);
+      }
     }
     
     return () => {
@@ -32,7 +36,11 @@ export default function AuthScreen() {
         clearTimeout(speechTimeoutRef.current);
       }
       if (Platform.OS !== 'web') {
-        try { Speech.stop(); } catch {}
+        try {
+          Speech.stop();
+        } catch (error) {
+          console.log('Speech stop failed:', error);
+        }
       }
     };
   }, []);
@@ -52,8 +60,12 @@ export default function AuthScreen() {
       : 'Authenticating with voice and face recognition...';
     
     if (Platform.OS !== 'web') {
-      try { Speech.stop(); } catch {}
-      Speech.speak(authMessage, { rate: speechRate });
+      try {
+        Speech.stop();
+        Speech.speak(authMessage, { rate: speechRate });
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
     }
 
     speechTimeoutRef.current = setTimeout(() => {
@@ -72,8 +84,12 @@ export default function AuthScreen() {
           : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
         
         if (Platform.OS !== 'web') {
-          try { Speech.stop(); } catch {}
-          Speech.speak(successMessage, { rate: speechRate });
+          try {
+            Speech.stop();
+            Speech.speak(successMessage, { rate: speechRate });
+          } catch (error) {
+            console.log('Speech not available:', error);
+          }
         }
         
         setTimeout(() => {
@@ -88,8 +104,12 @@ export default function AuthScreen() {
         
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
         if (Platform.OS !== 'web') {
-          try { Speech.stop(); } catch {}
-          Speech.speak(failMessage, { rate: speechRate });
+          try {
+            Speech.stop();
+            Speech.speak(failMessage, { rate: speechRate });
+          } catch (error) {
+            console.log('Speech not available:', error);
+          }
         }
         
         setTimeout(() => {
