@@ -1,13 +1,23 @@
-// Mock React Native modules
-jest.mock('react-native/Libraries/Components/StatusBar/StatusBar', () => 'StatusBar');
-
-jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
-  isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
-  addEventListener: jest.fn(() => ({
-    remove: jest.fn()
-  })),
-  removeEventListener: jest.fn()
-}));
+// Mock React Native AccessibilityInfo at the core level
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  
+  return {
+    ...RN,
+    AccessibilityInfo: {
+      isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+      addEventListener: jest.fn(() => ({
+        remove: jest.fn()
+      })),
+      removeEventListener: jest.fn()
+    },
+    Platform: {
+      ...RN.Platform,
+      OS: 'ios',
+      select: jest.fn((obj) => obj.ios || obj.default)
+    }
+  };
+});
 
 // Mock all Expo modules
 jest.mock('expo-linear-gradient', () => {
