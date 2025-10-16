@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Navigation, Scan, Phone, Settings, Volume2 } from 'lucide-react-native';
@@ -51,26 +51,36 @@ export default function DashboardScreen() {
   ];
 
   useEffect(() => {
-    // Enhanced welcome message with feature descriptions
     const welcomeMessage = 'Welcome to BrailleWalk dashboard. You have three main features available: Navigate for walking guidance, Scan Object for reading text and identifying objects, and I need help for emergency contacts. Tap any feature to get started.';
-    Speech.speak(welcomeMessage, { rate: 0.7 });
-    
-    // Provide haptic feedback for dashboard access
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch (error) {
+        console.log('Speech/Haptics not available:', error);
+      }
+    }
   }, []);
 
   const handleFeaturePress = (feature: DashboardFeature) => {
     setSelectedFeature(feature.id);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
     
-    // Enhanced feature descriptions
     const featureMessage = feature.id === 'navigate' 
       ? 'Starting navigation mode. You will receive real-time guidance for safe walking.'
       : feature.id === 'scan'
       ? 'Starting scan mode. Point your camera at objects or text to get descriptions.'
       : 'Starting emergency mode. You will be connected with your caregiver.';
     
-    Speech.speak(featureMessage, { rate: 0.7 });
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.speak(featureMessage, { rate: 0.7 });
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
+    }
     
     setTimeout(() => {
       router.push(feature.route as any);
@@ -78,9 +88,17 @@ export default function DashboardScreen() {
   };
 
   const handleRepeatInstructions = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
     const instructionsMessage = 'Tap Navigate for walking guidance, Scan Object for reading text and identifying objects, or I need help for emergency contacts.';
-    Speech.speak(instructionsMessage, { rate: 0.7 });
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.speak(instructionsMessage, { rate: 0.7 });
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
+    }
   };
 
   return (
