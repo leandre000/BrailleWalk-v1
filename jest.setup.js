@@ -1,4 +1,4 @@
-// Mock expo-linear-gradient
+// Mock all Expo modules
 jest.mock('expo-linear-gradient', () => {
   const React = require('react');
   return {
@@ -6,18 +6,52 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
-// Mock react-native-safe-area-context
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn()
+  }),
+  Stack: { Screen: 'Screen' }
+}));
+
+jest.mock('expo-speech', () => ({
+  speak: jest.fn(),
+  stop: jest.fn()
+}));
+
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(() => Promise.resolve()),
+  notificationAsync: jest.fn(() => Promise.resolve()),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy'
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error'
+  }
+}));
+
+jest.mock('expo-location', () => ({
+  requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getCurrentPositionAsync: jest.fn(() => Promise.resolve({
+    coords: { latitude: 0, longitude: 0 }
+  })),
+  Accuracy: { High: 4 }
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   return {
     SafeAreaProvider: ({ children }) => children,
     SafeAreaView: ({ children }) => children,
-    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 })
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
   };
 });
 
-// Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => {
   const React = require('react');
   const mockIcon = (name) => (props) => React.createElement('View', { ...props, testID: name });
@@ -43,9 +77,8 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-// Silence console warnings in tests
 global.console = {
   ...console,
   warn: jest.fn(),
-  error: jest.fn(),
+  error: jest.fn()
 };
