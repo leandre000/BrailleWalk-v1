@@ -12,8 +12,8 @@ module.exports = {
   ],
   setupFilesAfterEnv: ['@testing-library/react-native/extend-expect'],
   testMatch: [
-    '**/__tests__/**/*.(test|spec).(js|jsx|ts,tsx)',
-    '**/*.(test|spec).(js|jsx|ts,tsx)'
+    '**/__tests__/**/*.test.{js,jsx,ts,tsx}',
+    '**/*.test.{js,jsx,ts,tsx}'
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
