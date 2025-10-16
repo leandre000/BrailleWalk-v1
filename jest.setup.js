@@ -1,22 +1,22 @@
-// Mock React Native AccessibilityInfo at the core level
+// Mock React Native modules selectively
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
   
-  return {
-    ...RN,
-    AccessibilityInfo: {
-      isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
-      addEventListener: jest.fn(() => ({
-        remove: jest.fn()
-      })),
-      removeEventListener: jest.fn()
-    },
-    Platform: {
-      ...RN.Platform,
-      OS: 'ios',
-      select: jest.fn((obj) => obj.ios || obj.default)
-    }
+  RN.AccessibilityInfo = {
+    isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+    addEventListener: jest.fn(() => ({
+      remove: jest.fn()
+    })),
+    removeEventListener: jest.fn()
   };
+  
+  RN.Platform = {
+    ...RN.Platform,
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default)
+  };
+  
+  return RN;
 });
 
 // Mock all Expo modules
