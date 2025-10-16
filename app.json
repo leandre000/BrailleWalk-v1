@@ -6,8 +6,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "braillewalk",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0047AB"
     },
@@ -15,16 +16,15 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.braillewalk.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "BrailleWalk uses the camera to provide real-time assistance for visually impaired users, including text recognition, object detection, and navigation guidance.",
-        "NSMicrophoneUsageDescription": "BrailleWalk uses the microphone for voice commands and authentication features.",
-        "NSLocationWhenInUseUsageDescription": "BrailleWalk uses location services to provide navigation assistance and emergency location sharing with caregivers.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "BrailleWalk uses location services to provide navigation assistance and emergency location sharing with caregivers.",
-        "NSContactsUsageDescription": "BrailleWalk accesses contacts to enable emergency contact features for caregivers.",
-        "NSSpeechRecognitionUsageDescription": "BrailleWalk uses speech recognition for voice commands and accessibility features.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSCameraUsageDescription": "BrailleWalk needs camera access to identify objects, read text, and assist with navigation.",
+        "NSMicrophoneUsageDescription": "BrailleWalk needs microphone access for voice commands and authentication.",
+        "NSLocationWhenInUseUsageDescription": "BrailleWalk needs your location to provide navigation assistance and share GPS coordinates with caregivers in emergencies.",
+        "NSSpeechRecognitionUsageDescription": "BrailleWalk uses speech recognition for voice commands and accessibility features."
+      },
+      "buildNumber": "1"
       }
     },
     "android": {
