@@ -1,5 +1,5 @@
-// Mock AccessibilityInfo BEFORE React Native loads
-const mockAccessibilityInfo = {
+// Create global mock for AccessibilityInfo
+global.AccessibilityInfo = {
   isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
   addEventListener: jest.fn(() => ({
     remove: jest.fn()
@@ -7,7 +7,13 @@ const mockAccessibilityInfo = {
   removeEventListener: jest.fn()
 };
 
-jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => mockAccessibilityInfo);
+// Mock React Native to include our AccessibilityInfo
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  return Object.defineProperty(RN, 'AccessibilityInfo', {
+    get: () => global.AccessibilityInfo
+  });
+});
 
 // Mock all Expo modules
 jest.mock('expo-linear-gradient', () => {
@@ -54,9 +60,12 @@ jest.mock('expo-location', () => ({
   Accuracy: { High: 4 }
 }));
 
-jest.mock('expo-status-bar', () => ({
-  StatusBar: 'StatusBar'
-}));
+jest.mock('expo-status-bar', () => {
+  const React = require('react');
+  return {
+    StatusBar: (props) => React.createElement('View', props)
+  };
+});
 
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
