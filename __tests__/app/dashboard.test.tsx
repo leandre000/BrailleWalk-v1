@@ -2,26 +2,16 @@
 import { render } from '@testing-library/react-native';
 import DashboardScreen from '../../app/dashboard';
 
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-  }),
-}));
-
-jest.mock('expo-speech', () => ({
-  speak: jest.fn(),
-  stop: jest.fn(),
-}));
-
-jest.mock('expo-haptics', () => ({
-  impactAsync: jest.fn(() => Promise.resolve()),
-  ImpactFeedbackStyle: {
-    Light: 'light',
-    Medium: 'medium',
-  },
-}));
-
 describe('DashboardScreen', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
   it('renders correctly', () => {
     const { getByText } = render(<DashboardScreen />);
     expect(getByText('BrailleWalk')).toBeTruthy();
