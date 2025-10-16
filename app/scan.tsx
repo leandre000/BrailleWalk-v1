@@ -38,7 +38,6 @@ export default function ScanScreen() {
   const cameraRef = React.useRef<any>(null);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock AI detection data
   const mockTextResults = [
     'Stop sign ahead. Please be careful.',
     'Welcome to BrailleWalk. Your AI-powered vision assistant.',
@@ -59,13 +58,18 @@ export default function ScanScreen() {
 
   useEffect(() => {
     const welcomeMessage = `Scanning mode activated. Current mode: ${scanMode}. Point camera at text or objects to analyze. Tap to scan or use mode selector to change detection type.`;
-    Speech.speak(welcomeMessage, { rate: 0.7 });
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.speak(welcomeMessage, { rate: 0.7 });
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
+    }
     
     if (permission && !permission.granted) {
       requestPermission();
     }
 
-    // Auto-scan after 3 seconds
     scanTimeoutRef.current = setTimeout(() => {
       handleScan();
     }, 3000);
@@ -81,36 +85,51 @@ export default function ScanScreen() {
     if (scanState === 'scanning' || scanState === 'analyzing') return;
     
     setScanState('scanning');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Speech.speak('Scanning in progress...', { rate: 0.7 });
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Speech.speak('Scanning in progress...', { rate: 0.7 });
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
 
     setTimeout(async () => {
       setScanState('analyzing');
-      Speech.speak('Analyzing image with AI...', { rate: 0.7 });
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.speak('Analyzing image with AI...', { rate: 0.7 });
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
       
-      // Simulate AI processing time
       setTimeout(() => {
         const scanResult = performAIAnalysis();
         setResult(scanResult.content);
         setScanState('result');
         
-        // Add to scan history
         const newResult: ScanResult = {
           type: scanResult.type,
           content: scanResult.content,
           confidence: scanResult.confidence,
           timestamp: Date.now()
         };
-        setScanResults(prev => [newResult, ...prev.slice(0, 4)]); // Keep last 5 results
+        setScanResults(prev => [newResult, ...prev.slice(0, 4)]);
         
-        // Provide haptic feedback based on confidence
-        if (scanResult.confidence > 0.8) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') {
+          try {
+            if (scanResult.confidence > 0.8) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            } else {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            }
+            
+            Speech.speak(scanResult.content, { rate: 0.6 });
+          } catch (error) {
+            console.log('Native modules not available:', error);
+          }
         }
-        
-        Speech.speak(scanResult.content, { rate: 0.6 });
       }, 2500);
     }, 2000);
   };
@@ -137,7 +156,7 @@ export default function ScanScreen() {
           content: 'Barcode detected: Product ID 12345 - Apple iPhone 15 Pro',
           confidence: 0.92
         };
-      default: // auto mode
+      default:
         const isText = Math.random() > 0.5;
         if (isText) {
           const textResult = mockTextResults[Math.floor(Math.random() * mockTextResults.length)];
@@ -159,7 +178,13 @@ export default function ScanScreen() {
 
   const handleModeChange = (mode: ScanMode) => {
     setScanMode(mode);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     
     const modeMessages = {
       auto: 'Auto mode selected. Will detect both text and objects.',
@@ -168,29 +193,53 @@ export default function ScanScreen() {
       barcode: 'Barcode mode selected. Optimized for scanning barcodes and QR codes.'
     };
     
-    Speech.speak(modeMessages[mode], { rate: 0.7 });
+    if (Platform.OS !== 'web') {
+      try {
+        Speech.speak(modeMessages[mode], { rate: 0.7 });
+      } catch (error) {
+        console.log('Speech not available:', error);
+      }
+    }
   };
 
   const handleRescan = () => {
     setScanState('idle');
     setResult('');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Speech.speak('Ready to scan again. Point camera at target.');
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Speech.speak('Ready to scan again. Point camera at target.');
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
   };
 
   const handleQuit = () => {
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Speech.speak('Exiting scan mode');
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Speech.speak('Exiting scan mode');
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     router.back();
   };
 
   const handleRepeatResult = () => {
     if (result) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Speech.speak(result, { rate: 0.6 });
+      if (Platform.OS !== 'web') {
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          Speech.speak(result, { rate: 0.6 });
+        } catch (error) {
+          console.log('Native modules not available:', error);
+        }
+      }
     }
   };
 
@@ -229,7 +278,6 @@ export default function ScanScreen() {
         <View style={styles.content}>
           <Text style={styles.modeText}>Scanning mode activated</Text>
 
-          {/* Mode Selector */}
           <View style={styles.modeSelector}>
             <TouchableOpacity
               style={[styles.modeButton, scanMode === 'auto' && styles.activeModeButton]}
