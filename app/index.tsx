@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Mic, CheckCircle, XCircle, Eye, Volume2 } from 'lucide-react-native';
@@ -20,19 +20,20 @@ export default function AuthScreen() {
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Welcome message with improved accessibility
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
-    try { Speech.stop(); } catch {}
-    Speech.speak(welcomeMessage, { rate: speechRate });
-    
-    // Provide haptic feedback for app launch
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      try { Speech.stop(); } catch {}
+      Speech.speak(welcomeMessage, { rate: speechRate });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
     
     return () => {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
-      try { Speech.stop(); } catch {}
+      if (Platform.OS !== 'web') {
+        try { Speech.stop(); } catch {}
+      }
     };
   }, []);
 
@@ -40,7 +41,9 @@ export default function AuthScreen() {
     if (authState === 'authenticating' || authState === 'success') return;
     
     setAuthState('authenticating');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
     
     const authMessage = authMethod === 'voice' 
       ? 'Listening for voice recognition...' 
@@ -48,16 +51,19 @@ export default function AuthScreen() {
       ? 'Analyzing face recognition...'
       : 'Authenticating with voice and face recognition...';
     
-    try { Speech.stop(); } catch {}
-    Speech.speak(authMessage, { rate: speechRate });
+    if (Platform.OS !== 'web') {
+      try { Speech.stop(); } catch {}
+      Speech.speak(authMessage, { rate: speechRate });
+    }
 
-    // Simulate authentication process with more realistic timing
     speechTimeoutRef.current = setTimeout(() => {
-      const success = Math.random() > 0.2; // 80% success rate
+      const success = Math.random() > 0.2;
       
       if (success) {
         setAuthState('success');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        }
         
         const successMessage = authMethod === 'voice' 
           ? 'Voice recognized successfully. Welcome back to BrailleWalk.'
@@ -65,20 +71,26 @@ export default function AuthScreen() {
           ? 'Face recognized successfully. Welcome back to BrailleWalk.'
           : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
         
-        try { Speech.stop(); } catch {}
-        Speech.speak(successMessage, { rate: speechRate });
+        if (Platform.OS !== 'web') {
+          try { Speech.stop(); } catch {}
+          Speech.speak(successMessage, { rate: speechRate });
+        }
         
         setTimeout(() => {
           router.replace('/dashboard');
         }, 2500);
       } else {
         setAuthState('failed');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Vibration.vibrate([0, 200, 100, 200]); // Error vibration pattern
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+          Vibration.vibrate([0, 200, 100, 200]);
+        }
         
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
-        try { Speech.stop(); } catch {}
-        Speech.speak(failMessage, { rate: speechRate });
+        if (Platform.OS !== 'web') {
+          try { Speech.stop(); } catch {}
+          Speech.speak(failMessage, { rate: speechRate });
+        }
         
         setTimeout(() => {
           setAuthState('idle');
@@ -157,7 +169,6 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          {/* Authentication Method Indicator */}
           <View style={styles.authMethodContainer}>
             <Text style={styles.authMethodText}>
               {authMethod === 'voice' ? 'Voice Recognition' : 
