@@ -1,23 +1,13 @@
-// Mock React Native modules selectively
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  
-  RN.AccessibilityInfo = {
-    isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
-    addEventListener: jest.fn(() => ({
-      remove: jest.fn()
-    })),
-    removeEventListener: jest.fn()
-  };
-  
-  RN.Platform = {
-    ...RN.Platform,
-    OS: 'ios',
-    select: jest.fn((obj) => obj.ios || obj.default)
-  };
-  
-  return RN;
-});
+// Mock AccessibilityInfo BEFORE React Native loads
+const mockAccessibilityInfo = {
+  isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+  addEventListener: jest.fn(() => ({
+    remove: jest.fn()
+  })),
+  removeEventListener: jest.fn()
+};
+
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => mockAccessibilityInfo);
 
 // Mock all Expo modules
 jest.mock('expo-linear-gradient', () => {
@@ -98,7 +88,10 @@ jest.mock('lucide-react-native', () => {
     Type: mockIcon('Type'),
     ArrowLeft: mockIcon('ArrowLeft'),
     ArrowRight: mockIcon('ArrowRight'),
-    AlertCircle: mockIcon('AlertCircle')
+    AlertCircle: mockIcon('AlertCircle'),
+    Mic: mockIcon('Mic'),
+    CheckCircle: mockIcon('CheckCircle'),
+    XCircle: mockIcon('XCircle')
   };
 });
 
