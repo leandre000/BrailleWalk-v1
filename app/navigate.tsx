@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Compass, ArrowLeft, ArrowRight, AlertCircle, CheckCircle, Navigation, MapPin, Volume2, Pause, Play } from 'lucide-react-native';
@@ -33,7 +33,6 @@ export default function NavigateScreen() {
   const [distanceToDestination, setDistanceToDestination] = useState<number>(0);
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock navigation instructions with realistic scenarios
   const navigationInstructions: NavigationInstruction[] = [
     { id: '1', text: 'Navigation system activated. Starting route to destination.', type: 'navigating', priority: 'medium' },
     { id: '2', text: 'Continue straight for 50 meters.', type: 'navigating', priority: 'low' },
@@ -46,17 +45,16 @@ export default function NavigateScreen() {
   ];
 
   useEffect(() => {
-    // Initialize location services
     initializeLocation();
-    
-    // Start navigation simulation
     startNavigationSequence();
     
     return () => {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
-      try { Speech.stop(); } catch {}
+      if (Platform.OS !== 'web') {
+        try { Speech.stop(); } catch {}
+      }
     };
   }, []);
 
@@ -66,12 +64,24 @@ export default function NavigateScreen() {
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Speech.speak('Location services activated. Navigation ready.', { rate: 0.7 });
+        if (Platform.OS !== 'web') {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            Speech.speak('Location services activated. Navigation ready.', { rate: 0.7 });
+          } catch (error) {
+            console.log('Native modules not available:', error);
+          }
+        }
       }
     } catch (error) {
       console.log('Location error:', error);
-      Speech.speak('Navigation mode activated with limited location features.', { rate: 0.7 });
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.speak('Navigation mode activated with limited location features.', { rate: 0.7 });
+        } catch (err) {
+          console.log('Speech not available:', err);
+        }
+      }
     }
   };
 
@@ -90,7 +100,6 @@ export default function NavigateScreen() {
           : null
       );
       
-      // Set obstacle type for obstacle instructions
       if (currentInstruction.type === 'obstacle') {
         const obstacleTypes: ObstacleType[] = ['person', 'vehicle', 'object', 'stairs', 'curb'];
         setObstacleType(obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]);
@@ -98,21 +107,25 @@ export default function NavigateScreen() {
         setObstacleType(null);
       }
       
-      // Provide haptic feedback based on priority
-      if (currentInstruction.priority === 'high') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Vibration.vibrate([0, 200, 100, 200]);
-      } else if (currentInstruction.priority === 'medium') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== 'web') {
+        try {
+          if (currentInstruction.priority === 'high') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            Vibration.vibrate([0, 200, 100, 200]);
+          } else if (currentInstruction.priority === 'medium') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          }
+          
+          Speech.stop();
+          Speech.speak(currentInstruction.text, { rate: 0.6 });
+        } catch (error) {
+          console.log('Native modules not available:', error);
+        }
       }
-      
-      try { Speech.stop(); } catch {}
-      Speech.speak(currentInstruction.text, { rate: 0.6 });
       instructionIndex++;
       
-      // Schedule next instruction
       speechTimeoutRef.current = setTimeout(processInstruction, 4000);
     };
     
@@ -123,23 +136,47 @@ export default function NavigateScreen() {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try { Speech.stop(); } catch {}
-    Speech.speak('Exiting navigation mode');
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Speech.stop();
+        Speech.speak('Exiting navigation mode');
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
     router.back();
   };
 
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     
     if (isPaused) {
-      try { Speech.stop(); } catch {}
-      Speech.speak('Navigation resumed');
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.stop();
+          Speech.speak('Navigation resumed');
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
       startNavigationSequence();
     } else {
-      try { Speech.stop(); } catch {}
-      Speech.speak('Navigation paused');
+      if (Platform.OS !== 'web') {
+        try {
+          Speech.stop();
+          Speech.speak('Navigation paused');
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
@@ -147,9 +184,15 @@ export default function NavigateScreen() {
   };
 
   const handleRepeatInstruction = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try { Speech.stop(); } catch {}
-    Speech.speak(instruction, { rate: 0.6 });
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Speech.stop();
+        Speech.speak(instruction, { rate: 0.6 });
+      } catch (error) {
+        console.log('Native modules not available:', error);
+      }
+    }
   };
 
   const getIcon = () => {
@@ -204,7 +247,6 @@ export default function NavigateScreen() {
 
           <Text style={[styles.instruction, { color: getStatusColor() }]}>{instruction}</Text>
           
-          {/* Location and Distance Info */}
           {currentLocation && (
             <View style={styles.locationInfo}>
               <MapPin size={16} color="#FFFFFF" opacity={0.7} />
