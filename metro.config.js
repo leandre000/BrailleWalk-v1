@@ -12,5 +12,11 @@ config.resolver.assetExts.push(
   'jpg'
 );
 
+// Configure platform extensions for web
+config.resolver.platforms = ['web', 'ios', 'android'];
+
+// Add source extensions
+config.resolver.sourceExts.push('jsx', 'js', 'ts', 'tsx', 'json', 'cjs', 'mjs');
+
 module.exports = config;
 
