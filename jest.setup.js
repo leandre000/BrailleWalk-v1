@@ -1,3 +1,14 @@
+// Mock React Native modules
+jest.mock('react-native/Libraries/Components/StatusBar/StatusBar', () => 'StatusBar');
+
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
+  isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+  addEventListener: jest.fn(() => ({
+    remove: jest.fn()
+  })),
+  removeEventListener: jest.fn()
+}));
+
 // Mock all Expo modules
 jest.mock('expo-linear-gradient', () => {
   const React = require('react');
@@ -41,6 +52,10 @@ jest.mock('expo-location', () => ({
     coords: { latitude: 0, longitude: 0 }
   })),
   Accuracy: { High: 4 }
+}));
+
+jest.mock('expo-status-bar', () => ({
+  StatusBar: 'StatusBar'
 }));
 
 jest.mock('react-native-safe-area-context', () => {
