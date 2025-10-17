@@ -25,7 +25,6 @@
         "NSSpeechRecognitionUsageDescription": "BrailleWalk uses speech recognition for voice commands and accessibility features."
       },
       "buildNumber": "1"
-      }
     },
     "android": {
       "adaptiveIcon": {
