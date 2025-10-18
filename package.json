@@ -74,5 +74,8 @@
   ],
   "author": "BrailleWalk Team",
   "license": "MIT",
-  "private": true
+  "private": true,
+  "resolutions": {
+    "react-native": "0.73.6"
+  }
 }
