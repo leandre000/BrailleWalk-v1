@@ -9,6 +9,10 @@ import * as Location from 'expo-location';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
+
+//screen responsible for navigation
+
+
 type NavigationState = 'waiting' | 'navigating' | 'turning' | 'obstacle' | 'arrived' | 'paused';
 type ObstacleType = 'person' | 'vehicle' | 'object' | 'stairs' | 'curb' | null;
 
