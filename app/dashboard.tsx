@@ -8,6 +8,8 @@ import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
+//dashboard ready for future extension
+
 interface DashboardFeature {
   id: string;
   title: string;
