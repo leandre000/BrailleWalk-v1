@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Compass, ArrowLeft, ArrowRight, AlertCircle, CheckCircle, Navigation, MapPin, Volume2, Pause, Play } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -203,18 +203,18 @@ export default function NavigateScreen() {
     switch (navState) {
       case 'turning':
         return direction === 'left' ? (
-          <ArrowLeft size={80} color="#FFFFFF" strokeWidth={3} />
+          <MaterialIcons name="arrow-back" size={80} color="#FFFFFF" />
         ) : (
-          <ArrowRight size={80} color="#FFFFFF" strokeWidth={3} />
+          <MaterialIcons name="arrow-forward" size={80} color="#FFFFFF" />
         );
       case 'obstacle':
-        return <AlertCircle size={80} color="#EF4444" strokeWidth={3} />;
+        return <MaterialIcons name="warning" size={80} color="#EF4444" />;
       case 'arrived':
-        return <CheckCircle size={80} color="#10B981" strokeWidth={3} />;
+        return <MaterialIcons name="check-circle" size={80} color="#10B981" />;
       case 'paused':
-        return <Pause size={80} color="#F59E0B" strokeWidth={3} />;
+        return <MaterialIcons name="pause" size={80} color="#F59E0B" />;
       default:
-        return <Navigation size={80} color="#FFFFFF" strokeWidth={3} />;
+        return <MaterialIcons name="navigation" size={80} color="#FFFFFF" />;
     }
   };
 
@@ -253,7 +253,7 @@ export default function NavigateScreen() {
           
           {currentLocation && (
             <View style={styles.locationInfo}>
-              <MapPin size={16} color="#FFFFFF" opacity={0.7} />
+              <MaterialIcons name="location-on" size={16} color="#FFFFFF" style={{ opacity: 0.7 }} />
               <Text style={styles.locationText}>
                 Location: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
               </Text>
@@ -269,7 +269,7 @@ export default function NavigateScreen() {
               accessibilityLabel="Repeat instruction"
               accessibilityHint="Repeat the current navigation instruction"
             >
-              <Volume2 size={20} color="#FFFFFF" />
+              <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
               <Text style={styles.controlButtonText}>Repeat</Text>
             </TouchableOpacity>
             
@@ -279,7 +279,7 @@ export default function NavigateScreen() {
               accessibilityLabel={isPaused ? "Resume navigation" : "Pause navigation"}
               accessibilityHint={isPaused ? "Resume navigation" : "Pause navigation"}
             >
-              {isPaused ? <Play size={20} color="#FFFFFF" /> : <Pause size={20} color="#FFFFFF" />}
+              {isPaused ? <MaterialIcons name="play-arrow" size={20} color="#FFFFFF" /> : <MaterialIcons name="pause" size={20} color="#FFFFFF" />}
               <Text style={styles.controlButtonText}>{isPaused ? 'Resume' : 'Pause'}</Text>
             </TouchableOpacity>
           </View>
