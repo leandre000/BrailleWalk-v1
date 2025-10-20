@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Mic, CheckCircle, XCircle, Eye, Volume2 } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
@@ -150,11 +150,11 @@ export default function AuthScreen() {
   const getAuthIcon = () => {
     switch (authMethod) {
       case 'voice':
-        return <Volume2 size={80} color={getIconColor()} strokeWidth={2} />;
+        return <MaterialIcons name="volume-up" size={80} color={getIconColor()} />;
       case 'face':
-        return <Eye size={80} color={getIconColor()} strokeWidth={2} />;
+        return <MaterialIcons name="visibility" size={80} color={getIconColor()} />;
       default:
-        return <Mic size={80} color={getIconColor()} strokeWidth={2} />;
+        return <MaterialIcons name="mic" size={80} color={getIconColor()} />;
     }
   };
 
@@ -178,12 +178,12 @@ export default function AuthScreen() {
               {getAuthIcon()}
               {authState === 'success' && (
                 <View style={styles.statusIcon}>
-                  <CheckCircle size={40} color="#10B981" fill="#10B981" />
+                  <MaterialIcons name="check-circle" size={40} color="#10B981" />
                 </View>
               )}
               {authState === 'failed' && (
                 <View style={styles.statusIcon}>
-                  <XCircle size={40} color="#EF4444" fill="#EF4444" />
+                  <MaterialIcons name="cancel" size={40} color="#EF4444" />
                 </View>
               )}
             </View>

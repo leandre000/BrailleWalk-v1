@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Camera as ExpoCamera, CameraType } from 'expo-camera';
-import { Scan, Camera as CameraIcon, Volume2, RotateCcw, Zap, BookOpen, Package } from 'lucide-react-native';
+import { Camera, useCameraPermissions, CameraView } from 'expo-camera';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
@@ -29,7 +29,7 @@ interface DetectedObject {
 export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = ExpoCamera.useCameraPermissions();
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scanMode, setScanMode] = useState<ScanMode>('auto');
   const [result, setResult] = useState<string>('');
@@ -284,7 +284,7 @@ export default function ScanScreen() {
               onPress={() => handleModeChange('auto')}
               accessibilityLabel="Auto mode"
             >
-              <Zap size={16} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
+              <MaterialIcons name="flash-auto" size={16} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
               <Text style={[styles.modeButtonText, scanMode === 'auto' && styles.activeModeButtonText]}>Auto</Text>
             </TouchableOpacity>
             
@@ -293,7 +293,7 @@ export default function ScanScreen() {
               onPress={() => handleModeChange('text')}
               accessibilityLabel="Text mode"
             >
-              <BookOpen size={16} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
+              <MaterialIcons name="text-fields" size={16} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
               <Text style={[styles.modeButtonText, scanMode === 'text' && styles.activeModeButtonText]}>Text</Text>
             </TouchableOpacity>
             
@@ -302,7 +302,7 @@ export default function ScanScreen() {
               onPress={() => handleModeChange('object')}
               accessibilityLabel="Object mode"
             >
-              <Package size={16} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
+              <MaterialIcons name="view-in-ar" size={16} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
               <Text style={[styles.modeButtonText, scanMode === 'object' && styles.activeModeButtonText]}>Object</Text>
             </TouchableOpacity>
           </View>
@@ -321,10 +321,10 @@ export default function ScanScreen() {
               </View>
             ) : (
               Platform.OS !== 'web' ? (
-                <ExpoCamera
+                <CameraView
                   ref={cameraRef}
                   style={styles.camera}
-                  type={CameraType.back}
+                  facing="back"
                 />
               ) : (
                 <View style={styles.mockCamera}>
@@ -352,7 +352,7 @@ export default function ScanScreen() {
                   accessibilityLabel="Repeat result"
                   accessibilityHint="Repeat the scan result"
                 >
-                  <Volume2 size={20} color="#FFFFFF" />
+                  <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
                   <Text style={styles.controlButtonText}>Repeat</Text>
                 </TouchableOpacity>
                 
@@ -362,7 +362,7 @@ export default function ScanScreen() {
                   accessibilityLabel="Scan again"
                   accessibilityHint="Start a new scan"
                 >
-                  <RotateCcw size={20} color="#FFFFFF" />
+                  <MaterialIcons name="refresh" size={20} color="#FFFFFF" />
                   <Text style={styles.controlButtonText}>Scan Again</Text>
                 </TouchableOpacity>
               </>
@@ -375,7 +375,7 @@ export default function ScanScreen() {
                 accessibilityLabel="Start scan"
                 accessibilityHint="Start scanning the current view"
               >
-                <CameraIcon size={24} color="#FFFFFF" />
+                <MaterialIcons name="camera-alt" size={24} color="#FFFFFF" />
                 <Text style={styles.scanButtonText}>Scan Now</Text>
               </TouchableOpacity>
             )}
