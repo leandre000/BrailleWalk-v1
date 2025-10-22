@@ -58,8 +58,7 @@ export default function EmergencyScreen() {
     const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.stop();
-        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Speech.speak(welcomeMessage, { rate: 1, language: 'en-US' });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
         Vibration.vibrate([0, 200, 100, 200, 100, 200]);
       } catch (error) {
@@ -95,8 +94,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        Speech.stop();
-        Speech.speak(`Selected ${contact.name}, ${contact.relationship}`);
+        Speech.speak(`Selected ${contact.name}, ${contact.relationship}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -120,8 +118,7 @@ export default function EmergencyScreen() {
     
     if (Platform.OS !== 'web') {
       try {
-        Speech.stop();
-        Speech.speak(`Sending emergency message and location to ${contact.name}`);
+        Speech.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -137,8 +134,7 @@ export default function EmergencyScreen() {
       setEmergencyState('message-sent');
       if (Platform.OS !== 'web') {
         try {
-          Speech.stop();
-          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`);
+          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, { rate: 1, language: 'en-US' });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -154,8 +150,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
-        Speech.stop();
-        Speech.speak(`Calling ${contact.name}...`);
+        Speech.speak(`Calling ${contact.name}...`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -164,8 +159,7 @@ export default function EmergencyScreen() {
       setEmergencyState('in-call');
       if (Platform.OS !== 'web') {
         try {
-          Speech.stop();
-          Speech.speak(`Connected with ${contact.name}. Call in progress.`);
+          Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -186,8 +180,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-        Speech.stop();
-        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`);
+        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -201,8 +194,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        Speech.stop();
-        Speech.speak('Exiting emergency mode');
+        Speech.speak('Exiting emergency mode', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -215,8 +207,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-        Speech.stop();
-        Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`);
+        Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -231,48 +222,55 @@ export default function EmergencyScreen() {
 
   const renderSendingLocation = () => (
     <>
-      <Text className="text-xl text-white font-semibold mb-7.5 text-center">Emergency Contact</Text>
-      <View className="mb-15">
-        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
-          <Ionicons name="location" size={80} color="#FFFFFF" />
+      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Emergency Contact</Text>
+      <View className="mb-16">
+        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
+          <Ionicons name="location" size={120} color="#FFFFFF" />
         </View>
       </View>
-      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">Sending GPS location to the caregiver.</Text>
+      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">Sending GPS location to the caregiver.</Text>
     </>
   );
 
   const renderCalling = () => (
     <>
-      <Text className="text-xl text-white font-semibold mb-7.5 text-center">Emergency Contact</Text>
-      <View className="mb-15">
-        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
-          <Ionicons name="call" size={80} color="#FFFFFF" />
+      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Ringing</Text>
+      <View className="mb-16">
+        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
+          <Ionicons name="call" size={120} color="#FFFFFF" />
         </View>
       </View>
-      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">Calling...</Text>
+      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">Calling {selectedContact?.name}...</Text>
     </>
   );
 
   const renderInCall = () => (
     <>
-      <Text className="text-xl text-white font-semibold mb-7.5 text-center">{selectedContact?.name || 'Emergency Contact'}</Text>
-      <View className="mb-15">
-        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
-          <Text className="text-8xl">🎤</Text>
+      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">{selectedContact?.name || 'Emergency Contact'}</Text>
+      <View className="mb-16">
+        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
+          <Ionicons name="mic" size={120} color="#10B981" />
         </View>
       </View>
-      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">
-        Call in progress - Duration: {formatCallDuration(callDuration)}
+      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">
+        Call in progress
       </Text>
-      <View className="items-center mb-5">
-        <TouchableOpacity className="w-16 h-16 rounded-full bg-red-500 items-center justify-center" onPress={handleEndCall}>
-          <Ionicons name="call-outline" size={32} color="#FFFFFF" />
+      <Text className="text-2xl text-white font-bold text-center mb-10">
+        {formatCallDuration(callDuration)}
+      </Text>
+      <View className="items-center mb-8">
+        <TouchableOpacity 
+          className="w-20 h-20 rounded-full bg-red-500 items-center justify-center border-4 border-red-600" 
+          onPress={handleEndCall}
+          accessibilityLabel="End call"
+        >
+          <Ionicons name="call" size={40} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
         </TouchableOpacity>
       </View>
       {currentLocation && (
-        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-2xl mt-2.5">
-          <Ionicons name="location-outline" size={16} color="#FFFFFF" />
-          <Text className="text-xs text-white opacity-70 flex-1">
+        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full mt-4">
+          <Ionicons name="location-outline" size={18} color="#FFFFFF" style={{ opacity: 0.8 }} />
+          <Text className="text-xs text-white opacity-80 flex-1">
             Location shared: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
           </Text>
         </View>
@@ -284,9 +282,75 @@ export default function EmergencyScreen() {
     <GradientBackground>
       <View 
         className="flex-1"
-        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        {/* your previous renderContactSelection, renderEnded, etc remain same */}
+        <View className="items-center mb-12">
+          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
+        </View>
+
+        <View className="flex-1 items-center justify-center px-6">
+          {emergencyState === 'selecting' && (
+            <>
+              <Text className="text-lg text-white font-medium mb-12 text-center opacity-90">Select Emergency Contact</Text>
+              <View className="w-full gap-4 max-w-sm mb-8">
+                {mockContacts.map((contact) => (
+                  <TouchableOpacity
+                    key={contact.id}
+                    className="bg-white py-5 px-6 rounded-2xl border-l-6 border-red-500"
+                    onPress={() => handleSelectContact(contact)}
+                    accessibilityLabel={`Call ${contact.name}`}
+                    accessibilityHint={`${contact.relationship} - ${contact.phone}`}
+                  >
+                    <View className="flex-row items-center gap-4">
+                      <View className="w-14 h-14 rounded-full bg-red-500/10 items-center justify-center">
+                        <Ionicons name="person" size={28} color="#EF4444" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-xl font-bold text-blue-900 mb-1">{contact.name}</Text>
+                        <Text className="text-sm text-blue-900 opacity-70">{contact.relationship}</Text>
+                        <Text className="text-xs text-blue-900 opacity-60 mt-1">{contact.phone}</Text>
+                      </View>
+                      <Ionicons name="call" size={24} color="#EF4444" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+          {emergencyState === 'sending-location' && renderSendingLocation()}
+          {emergencyState === 'calling' && renderCalling()}
+          {emergencyState === 'in-call' && renderInCall()}
+          {emergencyState === 'ended' && (
+            <>
+              <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Call Ended</Text>
+              <View className="mb-16">
+                <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
+                  <Ionicons name="checkmark-circle" size={120} color="#10B981" />
+                </View>
+              </View>
+              <Text className="text-xl text-white font-semibold text-center px-8 mb-8">
+                Call ended successfully
+              </Text>
+              <Text className="text-base text-white text-center opacity-80">
+                Duration: {formatCallDuration(callDuration)}
+              </Text>
+            </>
+          )}
+        </View>
+
+        <View className="items-center gap-4">
+          {emergencyState !== 'in-call' && emergencyState !== 'calling' && emergencyState !== 'sending-location' && (
+            <TouchableOpacity
+              onPress={handleQuit}
+              className="py-3 px-8 bg-white/10 rounded-full border border-white/20"
+              accessibilityLabel="Go back"
+              accessibilityHint="Return to dashboard"
+            >
+              <Text className="text-base text-white font-semibold">Go Back</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </GradientBackground>
   );

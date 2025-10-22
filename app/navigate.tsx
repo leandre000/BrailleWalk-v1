@@ -73,7 +73,7 @@ export default function NavigateScreen() {
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            Speech.speak('Location services activated. Navigation ready.', { rate: 0.7 });
+            Speech.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Native modules not available:', error);
           }
@@ -125,8 +125,7 @@ export default function NavigateScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
           
-          Speech.stop();
-          Speech.speak(currentInstruction.text, { rate: 0.6 });
+          Speech.speak(currentInstruction.text, { rate: 1, language: 'en-US' });
         } catch (error) {
           console.log('Native modules not available:', error);
         }
@@ -146,8 +145,7 @@ export default function NavigateScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.stop();
-        Speech.speak('Exiting navigation mode');
+        Speech.speak('Exiting navigation mode', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -168,8 +166,7 @@ export default function NavigateScreen() {
     if (isPaused) {
       if (Platform.OS !== 'web') {
         try {
-          Speech.stop();
-          Speech.speak('Navigation resumed');
+          Speech.speak('Navigation resumed', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -178,8 +175,7 @@ export default function NavigateScreen() {
     } else {
       if (Platform.OS !== 'web') {
         try {
-          Speech.stop();
-          Speech.speak('Navigation paused');
+          Speech.speak('Navigation paused', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -194,8 +190,7 @@ export default function NavigateScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        Speech.stop();
-        Speech.speak(instruction, { rate: 0.6 });
+        Speech.speak(instruction, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -206,18 +201,18 @@ export default function NavigateScreen() {
     switch (navState) {
       case 'turning':
         return direction === 'left' ? (
-          <MaterialIcons name="arrow-back" size={80} color="#FFFFFF" />
+          <MaterialIcons name="arrow-back" size={120} color="#FFFFFF" />
         ) : (
-          <MaterialIcons name="arrow-forward" size={80} color="#FFFFFF" />
+          <MaterialIcons name="arrow-forward" size={120} color="#FFFFFF" />
         );
       case 'obstacle':
-        return <MaterialIcons name="warning" size={80} color="#EF4444" />;
+        return <MaterialIcons name="warning" size={120} color="#EF4444" />;
       case 'arrived':
-        return <MaterialIcons name="check-circle" size={80} color="#10B981" />;
+        return <MaterialIcons name="check-circle" size={120} color="#10B981" />;
       case 'paused':
-        return <MaterialIcons name="pause" size={80} color="#F59E0B" />;
+        return <MaterialIcons name="pause" size={120} color="#F59E0B" />;
       default:
-        return <MaterialIcons name="navigation" size={80} color="#FFFFFF" />;
+        return <MaterialIcons name="navigation" size={120} color="#FFFFFF" />;
     }
   };
 
@@ -238,19 +233,19 @@ export default function NavigateScreen() {
     <GradientBackground>
       <View 
         className="flex-1"
-        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-10">
-          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
-          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
+        <View className="items-center mb-12">
+          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-xl text-white font-semibold mb-15">Navigation mode active</Text>
+          <Text className="text-lg text-white font-medium mb-16 opacity-90">Navigation mode active</Text>
 
-          <View className="mb-15">
+          <View className="mb-16">
             <View 
-              className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3"
+              className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4"
               style={{ borderColor: getStatusColor() }}
             >
               {getIcon()}
@@ -258,14 +253,14 @@ export default function NavigateScreen() {
           </View>
 
           <Text 
-            className="text-2xl font-semibold text-center px-8 mb-5"
+            className="text-xl font-semibold text-center px-8 mb-8"
             style={{ color: getStatusColor() }}
           >{instruction}</Text>
           
           {currentLocation && (
-            <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-2xl mt-2.5">
-              <MaterialIcons name="location-on" size={16} color="#FFFFFF" style={{ opacity: 0.7 }} />
-              <Text className="text-xs text-white opacity-70 flex-1">
+            <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full mt-4">
+              <MaterialIcons name="location-on" size={18} color="#FFFFFF" style={{ opacity: 0.8 }} />
+              <Text className="text-xs text-white opacity-80 flex-1">
                 Location: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
               </Text>
             </View>
@@ -273,24 +268,24 @@ export default function NavigateScreen() {
         </View>
 
         <View className="items-center gap-4">
-          <View className="flex-row gap-4 mb-2.5">
+          <View className="flex-row gap-4 mb-3">
             <TouchableOpacity
               onPress={handleRepeatInstruction}
-              className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
+              className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
               accessibilityLabel="Repeat instruction"
               accessibilityHint="Repeat the current navigation instruction"
             >
-              <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
+              <MaterialIcons name="volume-up" size={22} color="#FFFFFF" />
               <Text className="text-sm text-white font-medium">Repeat</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               onPress={handlePauseResume}
-              className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
+              className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
               accessibilityLabel={isPaused ? "Resume navigation" : "Pause navigation"}
               accessibilityHint={isPaused ? "Resume navigation" : "Pause navigation"}
             >
-              {isPaused ? <MaterialIcons name="play-arrow" size={20} color="#FFFFFF" /> : <MaterialIcons name="pause" size={20} color="#FFFFFF" />}
+              {isPaused ? <MaterialIcons name="play-arrow" size={22} color="#FFFFFF" /> : <MaterialIcons name="pause" size={22} color="#FFFFFF" />}
               <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
             </TouchableOpacity>
           </View>
@@ -299,7 +294,7 @@ export default function NavigateScreen() {
           
           <TouchableOpacity
             onPress={handleQuit}
-            className="py-3 px-6 bg-red-500/20 rounded-3xl border border-red-500/40"
+            className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
             accessibilityLabel="Quit navigation"
             accessibilityHint="Exit navigation mode"
           >

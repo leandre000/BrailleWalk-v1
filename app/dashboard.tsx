@@ -56,7 +56,7 @@ export default function DashboardScreen() {
       'Welcome to BrailleWalk dashboard. You have three main features available: Navigate for walking guidance, Scan Object for reading text and identifying objects, and I need help for emergency contacts. Tap any feature to get started.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Speech.speak(welcomeMessage, { rate: 1 });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -80,15 +80,16 @@ export default function DashboardScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(featureMessage, { rate: 0.7 });
+        Speech.speak(featureMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
     }
 
+    // Wait for speech to complete before routing (~4-5 seconds at rate 1)
     setTimeout(() => {
       router.push(feature.route as any);
-    }, 1500);
+    }, 4500);
   };
 
   const handleRepeatInstructions = () => {
@@ -100,7 +101,7 @@ export default function DashboardScreen() {
     
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(instructionsMessage, { rate: 0.7 });
+        Speech.speak(instructionsMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
