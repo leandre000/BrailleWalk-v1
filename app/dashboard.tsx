@@ -29,7 +29,7 @@ export default function DashboardScreen() {
       id: 'navigate',
       title: 'Navigate',
       description: 'Get real-time walking guidance and obstacle detection',
-      icon: <Ionicons name="navigate" size={32} color="#0047AB" />,
+      icon: <Ionicons name="navigate" size={64} color="#0047AB" />,
       route: '/navigate',
       color: '#10B981'
     },
@@ -37,7 +37,7 @@ export default function DashboardScreen() {
       id: 'scan',
       title: 'Scan Object',
       description: 'Read text, identify objects, and describe your surroundings',
-      icon: <Feather name="camera" size={32} color="#0047AB" />,
+      icon: <Feather name="camera" size={64} color="#0047AB" />,
       route: '/scan',
       color: '#3B82F6'
     },
@@ -45,7 +45,7 @@ export default function DashboardScreen() {
       id: 'emergency',
       title: 'I need help',
       description: 'Contact your caregiver and share your location',
-      icon: <Ionicons name="call" size={32} color="#0047AB" />,
+      icon: <Ionicons name="call" size={64} color="#0047AB" />,
       route: '/emergency',
       color: '#EF4444'
     }
@@ -111,35 +111,34 @@ export default function DashboardScreen() {
     <GradientBackground>
       <View 
         className="flex-1"
-        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-15">
-          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
-          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
+        <View className="items-center mb-12">
+          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-xl text-white font-semibold mb-10 text-center">What do you want to do next?</Text>
+          <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">What do you want to do next?</Text>
 
-          <View className="w-full gap-4 max-w-sm">
+          <View className="flex-row items-center justify-center gap-8 mb-12">
             {features.map((feature) => (
               <TouchableOpacity
                 key={feature.id}
-                className={`bg-white py-5 px-6 rounded-2xl border-l-6 opacity-100 ${
-                  selectedFeature === feature.id ? 'bg-white/90 scale-98' : ''
+                className={`items-center ${
+                  selectedFeature === feature.id ? 'opacity-70' : 'opacity-100'
                 }`}
-                style={{ borderLeftColor: feature.color }}
                 onPress={() => handleFeaturePress(feature)}
                 accessibilityLabel={feature.title}
                 accessibilityHint={feature.description}
               >
-                <View className="flex-row items-center gap-4">
-                  <View className="w-12 h-12 rounded-3xl bg-blue-900/10 items-center justify-center">{feature.icon}</View>
-                  <View className="flex-1">
-                    <Text className="text-xl font-bold text-blue-900 mb-1">{feature.title}</Text>
-                    <Text className="text-sm text-blue-900 opacity-70 leading-4">{feature.description}</Text>
-                  </View>
+                <View 
+                  className="w-32 h-32 rounded-full bg-white items-center justify-center mb-3 border-4"
+                  style={{ borderColor: selectedFeature === feature.id ? feature.color : 'transparent' }}
+                >
+                  {feature.icon}
                 </View>
+                <Text className="text-sm text-white font-semibold text-center">{feature.title}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -148,17 +147,17 @@ export default function DashboardScreen() {
         <View className="items-center gap-4">
           <TouchableOpacity
             onPress={handleRepeatInstructions}
-            className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-3xl border border-white/20"
+            className="flex-row items-center gap-2 py-3 px-6 bg-white/10 rounded-full border border-white/20"
             accessibilityLabel="Repeat instructions"
             accessibilityHint="Tap to hear the available options again"
           >
-            <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
+            <MaterialIcons name="volume-up" size={22} color="#FFFFFF" />
             <Text className="text-sm text-white font-medium">Repeat instructions</Text>
           </TouchableOpacity>
 
           <Waveform isActive={isListening} />
 
-          <Text className="text-sm text-white opacity-70 text-center">
+          <Text className="text-sm text-white opacity-70 text-center px-8">
             {selectedFeature ? 'Loading feature...' : 'Tap any feature above to get started'}
           </Text>
         </View>
