@@ -15,9 +15,11 @@ export default function Waveform({ isActive = true, color = '#FFFFFF' }: Wavefor
   useEffect(() => {
     // Listen to reduce motion preference
     let mounted = true;
+    
     AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
       if (mounted) setReduceMotion(enabled);
     });
+    
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
       setReduceMotion(enabled);
     });
@@ -57,7 +59,7 @@ export default function Waveform({ isActive = true, color = '#FFFFFF' }: Wavefor
     animations.forEach((anim, index) => {
       animateBar(anim, index * 100);
     });
-  }, [isActive, reduceMotion]);
+  }, [isActive, reduceMotion, animations]);
 
   return (
     <View className="flex-row items-center justify-center gap-1.5 h-10">

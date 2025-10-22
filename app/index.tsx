@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
@@ -16,8 +17,8 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [authState, setAuthState] = useState<AuthState>('idle');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('both');
-  const [speechRate, setSpeechRate] = useState<number>(0.7);
-  const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [speechRate] = useState<number>(0.7);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
@@ -35,6 +36,7 @@ export default function AuthScreen() {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
+      
       if (Platform.OS !== 'web') {
         try {
           Speech.stop();
@@ -49,8 +51,9 @@ export default function AuthScreen() {
     if (authState === 'authenticating' || authState === 'success') return;
 
     setAuthState('authenticating');
+    
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
 
     const authMessage = authMethod === 'voice'
@@ -160,7 +163,6 @@ export default function AuthScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <TouchableOpacity
         style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
         className="flex-1"

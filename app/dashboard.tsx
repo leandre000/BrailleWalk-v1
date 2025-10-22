@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
@@ -65,6 +66,7 @@ export default function DashboardScreen() {
 
   const handleFeaturePress = (feature: DashboardFeature) => {
     setSelectedFeature(feature.id);
+    
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
@@ -93,8 +95,9 @@ export default function DashboardScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-    const instructionsMessage =
-      'Tap Navigate for walking guidance, Scan Object for reading text and identifying objects, or I need help for emergency contacts.';
+    
+    const instructionsMessage = 'Tap Navigate for walking guidance, Scan Object for reading text and identifying objects, or I need help for emergency contacts.';
+    
     if (Platform.OS !== 'web') {
       try {
         Speech.speak(instructionsMessage, { rate: 0.7 });
@@ -106,7 +109,6 @@ export default function DashboardScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <View 
         className="flex-1"
         style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}

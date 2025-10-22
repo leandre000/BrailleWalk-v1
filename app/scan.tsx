@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Camera, useCameraPermissions, CameraView } from 'expo-camera';
+import { useCameraPermissions, CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
@@ -36,7 +37,7 @@ export default function ScanScreen() {
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [detectedObjects, setDetectedObjects] = useState<DetectedObject[]>([]);
   const cameraRef = React.useRef<any>(null);
-  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mockTextResults = [
     'Stop sign ahead. Please be careful.',
@@ -72,7 +73,7 @@ export default function ScanScreen() {
 
     scanTimeoutRef.current = setTimeout(() => {
       handleScan();
-    }, 3000);
+    }, 3000) as ReturnType<typeof setTimeout>;
 
     return () => {
       if (scanTimeoutRef.current) {
@@ -85,6 +86,7 @@ export default function ScanScreen() {
     if (scanState === 'scanning' || scanState === 'analyzing') return;
     
     setScanState('scanning');
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -178,6 +180,7 @@ export default function ScanScreen() {
 
   const handleModeChange = (mode: ScanMode) => {
     setScanMode(mode);
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -268,7 +271,6 @@ export default function ScanScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <View 
         className="flex-1"
         style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}

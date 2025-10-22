@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Linking, Platform, Vibration } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Platform, Vibration } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+
 import GradientBackground from '@/components/GradientBackground';
-import Waveform from '@/components/Waveform';
 
 type EmergencyState = 'selecting' | 'sending-location' | 'calling' | 'in-call' | 'ended' | 'message-sent';
 type EmergencyType = 'medical' | 'navigation' | 'general' | 'urgent';
@@ -50,8 +50,8 @@ export default function EmergencyScreen() {
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [emergencyHistory, setEmergencyHistory] = useState<EmergencyMessage[]>([]);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     initializeLocation();
@@ -91,6 +91,7 @@ export default function EmergencyScreen() {
 
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
@@ -100,11 +101,13 @@ export default function EmergencyScreen() {
         console.log('Native modules not available:', error);
       }
     }
+    
     await sendEmergencyMessage(contact);
   };
 
   const sendEmergencyMessage = async (contact: Contact) => {
     setEmergencyState('sending-location');
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
@@ -112,7 +115,9 @@ export default function EmergencyScreen() {
         console.log('Haptics not available:', error);
       }
     }
+    
     const message = emergencyMessages[emergencyType];
+    
     if (Platform.OS !== 'web') {
       try {
         Speech.stop();
@@ -141,7 +146,7 @@ export default function EmergencyScreen() {
       setTimeout(() => {
         initiateCall(contact);
       }, 2000);
-    }, 3000);
+    }, 3000) as ReturnType<typeof setTimeout>;
   };
 
   const initiateCall = (contact: Contact) => {
@@ -168,7 +173,7 @@ export default function EmergencyScreen() {
       setCallDuration(0);
       callTimerRef.current = setInterval(() => {
         setCallDuration(prev => prev + 1);
-      }, 1000);
+      }, 1000) as ReturnType<typeof setInterval>;
       if (Platform.OS !== 'web') {
         Linking.openURL(`tel:${contact.phone}`);
       }
@@ -277,7 +282,6 @@ export default function EmergencyScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <View 
         className="flex-1"
         style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}

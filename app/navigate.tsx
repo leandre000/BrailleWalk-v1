@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
-
-//screen responsible for navigation
+// Screen responsible for navigation
 
 
 type NavigationState = 'waiting' | 'navigating' | 'turning' | 'obstacle' | 'arrived' | 'paused';
@@ -35,7 +35,7 @@ export default function NavigateScreen() {
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [obstacleType, setObstacleType] = useState<ObstacleType>(null);
   const [distanceToDestination, setDistanceToDestination] = useState<number>(0);
-  const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navigationInstructions: NavigationInstruction[] = [
     { id: '1', text: 'Navigation system activated. Starting route to destination.', type: 'navigating', priority: 'medium' },
@@ -65,9 +65,11 @@ export default function NavigateScreen() {
   const initializeLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
+      
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
+        
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -79,6 +81,7 @@ export default function NavigateScreen() {
       }
     } catch (error) {
       console.log('Location error:', error);
+      
       if (Platform.OS !== 'web') {
         try {
           Speech.speak('Navigation mode activated with limited location features.', { rate: 0.7 });
@@ -130,7 +133,7 @@ export default function NavigateScreen() {
       }
       instructionIndex++;
       
-      speechTimeoutRef.current = setTimeout(processInstruction, 4000);
+      speechTimeoutRef.current = setTimeout(processInstruction, 4000) as ReturnType<typeof setTimeout>;
     };
     
     processInstruction();
@@ -233,7 +236,6 @@ export default function NavigateScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <View 
         className="flex-1"
         style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
