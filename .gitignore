@@ -172,3 +172,7 @@ jspm_packages/
 
 expo-env.d.ts
 # @end expo-cli
+
+.expo
+.vscode
+node_modules

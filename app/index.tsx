@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 
@@ -16,8 +17,8 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [authState, setAuthState] = useState<AuthState>('idle');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('both');
-  const [speechRate, setSpeechRate] = useState<number>(0.7);
-  const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [speechRate] = useState<number>(0.7);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
@@ -25,16 +26,17 @@ export default function AuthScreen() {
       try {
         Speech.stop();
         Speech.speak(welcomeMessage, { rate: speechRate });
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
       }
     }
-    
+
     return () => {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
+      
       if (Platform.OS !== 'web') {
         try {
           Speech.stop();
@@ -47,18 +49,19 @@ export default function AuthScreen() {
 
   const handleAuthenticate = () => {
     if (authState === 'authenticating' || authState === 'success') return;
-    
+
     setAuthState('authenticating');
+    
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    
-    const authMessage = authMethod === 'voice' 
-      ? 'Listening for voice recognition...' 
-      : authMethod === 'face' 
-      ? 'Analyzing face recognition...'
-      : 'Authenticating with voice and face recognition...';
-    
+
+    const authMessage = authMethod === 'voice'
+      ? 'Listening for voice recognition...'
+      : authMethod === 'face'
+        ? 'Analyzing face recognition...'
+        : 'Authenticating with voice and face recognition...';
+
     if (Platform.OS !== 'web') {
       try {
         Speech.stop();
@@ -70,19 +73,19 @@ export default function AuthScreen() {
 
     speechTimeoutRef.current = setTimeout(() => {
       const success = Math.random() > 0.2;
-      
+
       if (success) {
         setAuthState('success');
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         }
-        
-        const successMessage = authMethod === 'voice' 
+
+        const successMessage = authMethod === 'voice'
           ? 'Voice recognized successfully. Welcome back to BrailleWalk.'
           : authMethod === 'face'
-          ? 'Face recognized successfully. Welcome back to BrailleWalk.'
-          : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
-        
+            ? 'Face recognized successfully. Welcome back to BrailleWalk.'
+            : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
+
         if (Platform.OS !== 'web') {
           try {
             Speech.stop();
@@ -91,17 +94,17 @@ export default function AuthScreen() {
             console.log('Speech not available:', error);
           }
         }
-        
+
         setTimeout(() => {
           router.replace('/dashboard');
         }, 2500);
       } else {
         setAuthState('failed');
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
           Vibration.vibrate([0, 200, 100, 200]);
         }
-        
+
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
         if (Platform.OS !== 'web') {
           try {
@@ -111,7 +114,7 @@ export default function AuthScreen() {
             console.log('Speech not available:', error);
           }
         }
-        
+
         setTimeout(() => {
           setAuthState('idle');
         }, 3000);
@@ -122,11 +125,11 @@ export default function AuthScreen() {
   const getStatusText = () => {
     switch (authState) {
       case 'authenticating':
-        return authMethod === 'voice' 
-          ? 'Listening for voice...' 
+        return authMethod === 'voice'
+          ? 'Listening for voice...'
           : authMethod === 'face'
-          ? 'Analyzing face...'
-          : 'Authenticating...';
+            ? 'Analyzing face...'
+            : 'Authenticating...';
       case 'success':
         return 'Authentication successful. Welcome back.';
       case 'failed':
@@ -150,56 +153,51 @@ export default function AuthScreen() {
   const getAuthIcon = () => {
     switch (authMethod) {
       case 'voice':
-        return <MaterialIcons name="volume-up" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="volume-up" size={120} color={getIconColor()} />;
       case 'face':
-        return <MaterialIcons name="visibility" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="visibility" size={120} color={getIconColor()} />;
       default:
-        return <MaterialIcons name="mic" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="mic" size={120} color={getIconColor()} />;
     }
   };
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
       <TouchableOpacity
-        style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
+        className="flex-1"
         onPress={handleAuthenticate}
         disabled={authState === 'authenticating' || authState === 'success'}
         activeOpacity={0.9}
         accessibilityLabel="Authenticate"
         accessibilityHint="Hold to authenticate with voice or face"
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>BrailleWalk</Text>
-          <Text style={styles.subtitle}>Your AI-powered vision assistant.</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-5xl font-bold text-white mb-3 text-center">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80 mb-20 text-center">Your AI-powered vision assistant.</Text>
 
-          <View style={styles.iconContainer}>
-            <View style={[styles.micBackground, { borderColor: getIconColor() }]}>
+          <View className="mb-16">
+            <View 
+              className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4"
+              style={{ borderColor: getIconColor() }}
+            >
               {getAuthIcon()}
               {authState === 'success' && (
-                <View style={styles.statusIcon}>
-                  <MaterialIcons name="check-circle" size={40} color="#10B981" />
+                <View className="absolute top-4 right-4">
+                  <MaterialIcons name="check-circle" size={48} color="#10B981" />
                 </View>
               )}
               {authState === 'failed' && (
-                <View style={styles.statusIcon}>
-                  <MaterialIcons name="cancel" size={40} color="#EF4444" />
+                <View className="absolute top-4 right-4">
+                  <MaterialIcons name="cancel" size={48} color="#EF4444" />
                 </View>
               )}
             </View>
           </View>
 
-          <View style={styles.authMethodContainer}>
-            <Text style={styles.authMethodText}>
-              {authMethod === 'voice' ? 'Voice Recognition' : 
-               authMethod === 'face' ? 'Face Recognition' : 
-               'Voice + Face Recognition'}
-            </Text>
-          </View>
+          <Text className="text-lg text-white text-center font-medium mb-12 px-8 opacity-90">{getStatusText()}</Text>
 
-          <Text style={styles.status}>{getStatusText()}</Text>
-
-          <View style={styles.waveformContainer}>
+          <View className="h-16 mb-8">
             <Waveform isActive={authState === 'authenticating'} />
           </View>
         </View>
@@ -207,71 +205,3 @@ export default function AuthScreen() {
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: '700' as const,
-    color: '#FFFFFF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 60,
-    textAlign: 'center',
-  },
-  iconContainer: {
-    marginBottom: 40,
-  },
-  micBackground: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-  },
-  statusIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  status: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontWeight: '600' as const,
-    marginBottom: 40,
-    paddingHorizontal: 32,
-  },
-  waveformContainer: {
-    height: 60,
-  },
-  authMethodContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-  },
-  authMethodText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    textAlign: 'center',
-    fontWeight: '500' as const,
-  },
-});

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Linking, Platform, Vibration } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Platform, Vibration } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+
 import GradientBackground from '@/components/GradientBackground';
-import Waveform from '@/components/Waveform';
 
 type EmergencyState = 'selecting' | 'sending-location' | 'calling' | 'in-call' | 'ended' | 'message-sent';
 type EmergencyType = 'medical' | 'navigation' | 'general' | 'urgent';
@@ -50,8 +50,8 @@ export default function EmergencyScreen() {
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [emergencyHistory, setEmergencyHistory] = useState<EmergencyMessage[]>([]);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     initializeLocation();
@@ -91,6 +91,7 @@ export default function EmergencyScreen() {
 
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
@@ -100,11 +101,13 @@ export default function EmergencyScreen() {
         console.log('Native modules not available:', error);
       }
     }
+    
     await sendEmergencyMessage(contact);
   };
 
   const sendEmergencyMessage = async (contact: Contact) => {
     setEmergencyState('sending-location');
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
@@ -112,7 +115,9 @@ export default function EmergencyScreen() {
         console.log('Haptics not available:', error);
       }
     }
+    
     const message = emergencyMessages[emergencyType];
+    
     if (Platform.OS !== 'web') {
       try {
         Speech.stop();
@@ -141,7 +146,7 @@ export default function EmergencyScreen() {
       setTimeout(() => {
         initiateCall(contact);
       }, 2000);
-    }, 3000);
+    }, 3000) as ReturnType<typeof setTimeout>;
   };
 
   const initiateCall = (contact: Contact) => {
@@ -168,7 +173,7 @@ export default function EmergencyScreen() {
       setCallDuration(0);
       callTimerRef.current = setInterval(() => {
         setCallDuration(prev => prev + 1);
-      }, 1000);
+      }, 1000) as ReturnType<typeof setInterval>;
       if (Platform.OS !== 'web') {
         Linking.openURL(`tel:${contact.phone}`);
       }
@@ -226,48 +231,48 @@ export default function EmergencyScreen() {
 
   const renderSendingLocation = () => (
     <>
-      <Text style={styles.modeText}>Emergency Contact</Text>
-      <View style={styles.iconContainer}>
-        <View style={styles.iconCircle}>
+      <Text className="text-xl text-white font-semibold mb-7.5 text-center">Emergency Contact</Text>
+      <View className="mb-15">
+        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
           <Ionicons name="location" size={80} color="#FFFFFF" />
         </View>
       </View>
-      <Text style={styles.instruction}>Sending GPS location to the caregiver.</Text>
+      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">Sending GPS location to the caregiver.</Text>
     </>
   );
 
   const renderCalling = () => (
     <>
-      <Text style={styles.modeText}>Emergency Contact</Text>
-      <View style={styles.iconContainer}>
-        <View style={styles.iconCircle}>
+      <Text className="text-xl text-white font-semibold mb-7.5 text-center">Emergency Contact</Text>
+      <View className="mb-15">
+        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
           <Ionicons name="call" size={80} color="#FFFFFF" />
         </View>
       </View>
-      <Text style={styles.instruction}>Calling...</Text>
+      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">Calling...</Text>
     </>
   );
 
   const renderInCall = () => (
     <>
-      <Text style={styles.modeText}>{selectedContact?.name || 'Emergency Contact'}</Text>
-      <View style={styles.iconContainer}>
-        <View style={[styles.iconCircle, styles.micCircle]}>
-          <Text style={styles.micIcon}>🎤</Text>
+      <Text className="text-xl text-white font-semibold mb-7.5 text-center">{selectedContact?.name || 'Emergency Contact'}</Text>
+      <View className="mb-15">
+        <View className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3 border-white">
+          <Text className="text-8xl">🎤</Text>
         </View>
       </View>
-      <Text style={styles.instruction}>
+      <Text className="text-2xl text-white font-semibold text-center px-8 mb-5">
         Call in progress - Duration: {formatCallDuration(callDuration)}
       </Text>
-      <View style={styles.callControls}>
-        <TouchableOpacity style={styles.endCallButton} onPress={handleEndCall}>
+      <View className="items-center mb-5">
+        <TouchableOpacity className="w-16 h-16 rounded-full bg-red-500 items-center justify-center" onPress={handleEndCall}>
           <Ionicons name="call-outline" size={32} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
       {currentLocation && (
-        <View style={styles.locationInfo}>
+        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-2xl mt-2.5">
           <Ionicons name="location-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.locationText}>
+          <Text className="text-xs text-white opacity-70 flex-1">
             Location shared: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
           </Text>
         </View>
@@ -277,12 +282,12 @@ export default function EmergencyScreen() {
 
   return (
     <GradientBackground>
-      <StatusBar barStyle="light-content" />
-      <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
+      <View 
+        className="flex-1"
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+      >
         {/* your previous renderContactSelection, renderEnded, etc remain same */}
       </View>
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({ container: { flex: 1, }, header: { alignItems: 'center', marginBottom: 40, }, title: { fontSize: 40, fontWeight: '700' as const, color: '#FFFFFF', marginBottom: 8, }, subtitle: { fontSize: 16, color: '#FFFFFF', opacity: 0.9, }, content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, }, modeText: { fontSize: 20, color: '#FFFFFF', fontWeight: '600' as const, marginBottom: 30, textAlign: 'center', }, emergencyTypeSelector: { marginBottom: 30, paddingHorizontal: 20, }, selectorLabel: { fontSize: 16, color: '#FFFFFF', fontWeight: '600' as const, marginBottom: 12, textAlign: 'center', }, typeButtons: { flexDirection: 'row', gap: 8, justifyContent: 'center', }, typeButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 15, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)', }, activeTypeButton: { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF', }, typeButtonText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' as const, }, activeTypeButtonText: { color: '#0047AB', }, contactList: { width: '100%', maxWidth: 400, gap: 12, marginBottom: 30, }, contactButton: { backgroundColor: '#FFFFFF', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 20, borderWidth: 2, borderColor: 'transparent', }, primaryContactButton: { backgroundColor: '#FEF3C7', borderColor: '#F59E0B', }, contactHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, }, contactButtonText: { fontSize: 18, fontWeight: '700' as const, color: '#0047AB', }, primaryContactText: { color: '#92400E', }, primaryBadge: { fontSize: 10, color: '#92400E', backgroundColor: '#FCD34D', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, fontWeight: '600' as const, }, contactPhone: { fontSize: 14, color: '#0047AB', opacity: 0.7, marginBottom: 2, }, contactRelationship: { fontSize: 12, color: '#0047AB', opacity: 0.5, }, iconContainer: { marginBottom: 40, }, iconCircle: { width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255, 255, 255, 0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FFFFFF', }, micCircle: { backgroundColor: 'rgba(255, 255, 255, 0.25)', }, micIcon: { fontSize: 80, }, instruction: { fontSize: 18, color: '#FFFFFF', fontWeight: '600' as const, textAlign: 'center', paddingHorizontal: 32, }, callControls: { marginTop: 30, alignItems: 'center', }, endCallButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center', }, locationInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 15, marginTop: 20, }, locationText: { fontSize: 12, color: '#FFFFFF', opacity: 0.7, flex: 1, }, emergencySummary: { marginTop: 20, padding: 16, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 15, width: '100%', }, summaryTitle: { fontSize: 16, color: '#FFFFFF', fontWeight: '600' as const, marginBottom: 12, textAlign: 'center', }, summaryText: { fontSize: 14, color: '#FFFFFF', opacity: 0.9, marginBottom: 4, lineHeight: 20, }, footer: { alignItems: 'center', gap: 16, }, quitButton: { paddingVertical: 12, paddingHorizontal: 24, backgroundColor: 'rgba(239, 68, 68, 0.2)', borderRadius: 25, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)', }, quitText: { fontSize: 16, color: '#FFFFFF', fontWeight: '600' as const, }, });
