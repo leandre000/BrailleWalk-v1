@@ -153,18 +153,18 @@ export default function AuthScreen() {
   const getAuthIcon = () => {
     switch (authMethod) {
       case 'voice':
-        return <MaterialIcons name="volume-up" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="volume-up" size={120} color={getIconColor()} />;
       case 'face':
-        return <MaterialIcons name="visibility" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="visibility" size={120} color={getIconColor()} />;
       default:
-        return <MaterialIcons name="mic" size={80} color={getIconColor()} />;
+        return <MaterialIcons name="mic" size={120} color={getIconColor()} />;
     }
   };
 
   return (
     <GradientBackground>
       <TouchableOpacity
-        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
         className="flex-1"
         onPress={handleAuthenticate}
         disabled={authState === 'authenticating' || authState === 'success'}
@@ -173,39 +173,31 @@ export default function AuthScreen() {
         accessibilityHint="Hold to authenticate with voice or face"
       >
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl font-bold text-white mb-2 text-center">BrailleWalk</Text>
-          <Text className="text-lg text-white opacity-90 mb-15 text-center">Your AI-powered vision assistant.</Text>
+          <Text className="text-5xl font-bold text-white mb-3 text-center">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80 mb-20 text-center">Your AI-powered vision assistant.</Text>
 
-          <View className="mb-10">
+          <View className="mb-16">
             <View 
-              className="w-50 h-50 rounded-full bg-white/15 items-center justify-center border-3"
+              className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4"
               style={{ borderColor: getIconColor() }}
             >
               {getAuthIcon()}
               {authState === 'success' && (
-                <View className="absolute top-2.5 right-2.5">
-                  <MaterialIcons name="check-circle" size={40} color="#10B981" />
+                <View className="absolute top-4 right-4">
+                  <MaterialIcons name="check-circle" size={48} color="#10B981" />
                 </View>
               )}
               {authState === 'failed' && (
-                <View className="absolute top-2.5 right-2.5">
-                  <MaterialIcons name="cancel" size={40} color="#EF4444" />
+                <View className="absolute top-4 right-4">
+                  <MaterialIcons name="cancel" size={48} color="#EF4444" />
                 </View>
               )}
             </View>
           </View>
 
-          <View className="mb-5 px-5 py-2 bg-white/10 rounded-2xl">
-            <Text className="text-sm text-white opacity-90 text-center font-medium">
-              {authMethod === 'voice' ? 'Voice Recognition' :
-                authMethod === 'face' ? 'Face Recognition' :
-                  'Voice + Face Recognition'}
-            </Text>
-          </View>
+          <Text className="text-lg text-white text-center font-medium mb-12 px-8 opacity-90">{getStatusText()}</Text>
 
-          <Text className="text-xl text-white text-center font-semibold mb-10 px-8">{getStatusText()}</Text>
-
-          <View className="h-15">
+          <View className="h-16 mb-8">
             <Waveform isActive={authState === 'authenticating'} />
           </View>
         </View>
