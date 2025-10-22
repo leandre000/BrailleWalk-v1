@@ -25,12 +25,12 @@ export default function AuthScreen() {
       try {
         Speech.stop();
         Speech.speak(welcomeMessage, { rate: speechRate });
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
       }
     }
-    
+
     return () => {
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
@@ -47,18 +47,18 @@ export default function AuthScreen() {
 
   const handleAuthenticate = () => {
     if (authState === 'authenticating' || authState === 'success') return;
-    
+
     setAuthState('authenticating');
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     }
-    
-    const authMessage = authMethod === 'voice' 
-      ? 'Listening for voice recognition...' 
-      : authMethod === 'face' 
-      ? 'Analyzing face recognition...'
-      : 'Authenticating with voice and face recognition...';
-    
+
+    const authMessage = authMethod === 'voice'
+      ? 'Listening for voice recognition...'
+      : authMethod === 'face'
+        ? 'Analyzing face recognition...'
+        : 'Authenticating with voice and face recognition...';
+
     if (Platform.OS !== 'web') {
       try {
         Speech.stop();
@@ -70,19 +70,19 @@ export default function AuthScreen() {
 
     speechTimeoutRef.current = setTimeout(() => {
       const success = Math.random() > 0.2;
-      
+
       if (success) {
         setAuthState('success');
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         }
-        
-        const successMessage = authMethod === 'voice' 
+
+        const successMessage = authMethod === 'voice'
           ? 'Voice recognized successfully. Welcome back to BrailleWalk.'
           : authMethod === 'face'
-          ? 'Face recognized successfully. Welcome back to BrailleWalk.'
-          : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
-        
+            ? 'Face recognized successfully. Welcome back to BrailleWalk.'
+            : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
+
         if (Platform.OS !== 'web') {
           try {
             Speech.stop();
@@ -91,17 +91,17 @@ export default function AuthScreen() {
             console.log('Speech not available:', error);
           }
         }
-        
+
         setTimeout(() => {
           router.replace('/dashboard');
         }, 2500);
       } else {
         setAuthState('failed');
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
           Vibration.vibrate([0, 200, 100, 200]);
         }
-        
+
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
         if (Platform.OS !== 'web') {
           try {
@@ -111,7 +111,7 @@ export default function AuthScreen() {
             console.log('Speech not available:', error);
           }
         }
-        
+
         setTimeout(() => {
           setAuthState('idle');
         }, 3000);
@@ -122,11 +122,11 @@ export default function AuthScreen() {
   const getStatusText = () => {
     switch (authState) {
       case 'authenticating':
-        return authMethod === 'voice' 
-          ? 'Listening for voice...' 
+        return authMethod === 'voice'
+          ? 'Listening for voice...'
           : authMethod === 'face'
-          ? 'Analyzing face...'
-          : 'Authenticating...';
+            ? 'Analyzing face...'
+            : 'Authenticating...';
       case 'success':
         return 'Authentication successful. Welcome back.';
       case 'failed':
@@ -191,9 +191,9 @@ export default function AuthScreen() {
 
           <View style={styles.authMethodContainer}>
             <Text style={styles.authMethodText}>
-              {authMethod === 'voice' ? 'Voice Recognition' : 
-               authMethod === 'face' ? 'Face Recognition' : 
-               'Voice + Face Recognition'}
+              {authMethod === 'voice' ? 'Voice Recognition' :
+                authMethod === 'face' ? 'Face Recognition' :
+                  'Voice + Face Recognition'}
             </Text>
           </View>
 

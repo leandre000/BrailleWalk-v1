@@ -128,7 +128,6 @@ export default function DashboardScreen() {
                 onPress={() => handleFeaturePress(feature)}
                 accessibilityLabel={feature.title}
                 accessibilityHint={feature.description}
-                disabled={selectedFeature !== null && selectedFeature !== feature.id}
               >
                 <View style={styles.buttonContent}>
                   <View style={styles.iconContainer}>{feature.icon}</View>
