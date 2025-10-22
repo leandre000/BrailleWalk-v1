@@ -86,16 +86,33 @@ export default function AuthScreen() {
 
         if (Platform.OS !== 'web') {
           try {
-            Speech.speak(successMessage, { rate: speechRate, language: 'en-US' });
+            Speech.speak(successMessage, { 
+              rate: speechRate, 
+              language: 'en-US',
+              onDone: () => {
+                // Route immediately after speech finishes
+                router.replace('/dashboard');
+              },
+              onError: () => {
+                // If speech fails, route after 2 seconds
+                setTimeout(() => {
+                  router.replace('/dashboard');
+                }, 2000);
+              }
+            });
           } catch (error) {
             console.log('Speech not available:', error);
+            // If speech module not available, route after 2 seconds
+            setTimeout(() => {
+              router.replace('/dashboard');
+            }, 2000);
           }
+        } else {
+          // Web platform - no speech, route after 2 seconds
+          setTimeout(() => {
+            router.replace('/dashboard');
+          }, 2000);
         }
-
-        // Wait for speech to complete before routing (success message is ~4 seconds at rate 1)
-        setTimeout(() => {
-          router.replace('/dashboard');
-        }, 4500);
       } else {
         setAuthState('failed');
         if (Platform.OS !== 'web') {

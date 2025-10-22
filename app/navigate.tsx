@@ -125,14 +125,31 @@ export default function NavigateScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
           
-          Speech.speak(currentInstruction.text, { rate: 1, language: 'en-US' });
+          Speech.speak(currentInstruction.text, { 
+            rate: 1, 
+            language: 'en-US',
+            onDone: () => {
+              // Wait 1 second after speech finishes, then next instruction
+              instructionIndex++;
+              speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
+            },
+            onError: () => {
+              // If speech fails, proceed after 2 seconds
+              instructionIndex++;
+              speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
+            }
+          });
         } catch (error) {
           console.log('Native modules not available:', error);
+          // If speech module not available, proceed after 2 seconds
+          instructionIndex++;
+          speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
         }
+      } else {
+        // Web platform - no speech, proceed after 2 seconds
+        instructionIndex++;
+        speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
       }
-      instructionIndex++;
-      
-      speechTimeoutRef.current = setTimeout(processInstruction, 4000) as ReturnType<typeof setTimeout>;
     };
     
     processInstruction();

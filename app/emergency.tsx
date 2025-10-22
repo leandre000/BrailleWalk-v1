@@ -19,6 +19,12 @@ interface Contact {
   relationship: string;
   isPrimary: boolean;
   lastContact?: number;
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  distance?: number; // Distance in kilometers from user
 }
 
 interface EmergencyMessage {
@@ -29,9 +35,30 @@ interface EmergencyMessage {
 }
 
 const mockContacts: Contact[] = [
-  { id: '1', name: 'UWIMANA Lucy', phone: '0788811121', relationship: 'Primary Caregiver', isPrimary: true },
-  { id: '2', name: 'HABIMANA Bill', phone: '0780000012', relationship: 'Family Member', isPrimary: false },
-  { id: '3', name: 'MUKARUTESI Kelly', phone: '0780121292', relationship: 'Emergency Contact', isPrimary: false },
+  { 
+    id: '1', 
+    name: 'UWIMANA Lucy', 
+    phone: '0788811121', 
+    relationship: 'Primary Caregiver', 
+    isPrimary: true,
+    location: { latitude: -1.9441, longitude: 30.0619, address: 'Kigali, Gasabo District' }
+  },
+  { 
+    id: '2', 
+    name: 'HABIMANA Bill', 
+    phone: '0780000012', 
+    relationship: 'Family Member', 
+    isPrimary: false,
+    location: { latitude: -1.9536, longitude: 30.0606, address: 'Kigali, Kicukiro District' }
+  },
+  { 
+    id: '3', 
+    name: 'MUKARUTESI Kelly', 
+    phone: '0780121292', 
+    relationship: 'Emergency Contact', 
+    isPrimary: false,
+    location: { latitude: -1.9706, longitude: 30.1044, address: 'Kigali, Nyarugenge District' }
+  },
 ];
 
 const emergencyMessages = {
@@ -48,6 +75,7 @@ export default function EmergencyScreen() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [emergencyType, setEmergencyType] = useState<EmergencyType>('general');
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+  const [sortedContacts, setSortedContacts] = useState<Contact[]>(mockContacts);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [emergencyHistory, setEmergencyHistory] = useState<EmergencyMessage[]>([]);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -74,14 +102,52 @@ export default function EmergencyScreen() {
     };
   }, []);
 
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   const initializeLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
+        const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
+        
+        // Calculate distances and sort contacts by proximity
+        const contactsWithDistance = mockContacts.map(contact => {
+          if (contact.location) {
+            const distance = calculateDistance(
+              location.coords.latitude,
+              location.coords.longitude,
+              contact.location.latitude,
+              contact.location.longitude
+            );
+            return { ...contact, distance };
+          }
+          return contact;
+        });
+        
+        // Sort by distance (nearest first), then by isPrimary
+        const sorted = contactsWithDistance.sort((a, b) => {
+          if (a.distance !== undefined && b.distance !== undefined) {
+            return a.distance - b.distance;
+          }
+          if (a.isPrimary && !b.isPrimary) return -1;
+          if (!a.isPrimary && b.isPrimary) return 1;
+          return 0;
+        });
+        
+        setSortedContacts(sorted);
+        console.log('Contacts sorted by distance:', sorted.map(c => ({ name: c.name, distance: c.distance?.toFixed(2) })));
       }
     } catch (error) {
       console.log('Location error:', error);
@@ -134,14 +200,33 @@ export default function EmergencyScreen() {
       setEmergencyState('message-sent');
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, { rate: 1, language: 'en-US' });
+          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, { 
+            rate: 1, 
+            language: 'en-US',
+            onDone: () => {
+              // Initiate call immediately after speech finishes
+              initiateCall(contact);
+            },
+            onError: () => {
+              // If speech fails, initiate call after 1 second
+              setTimeout(() => {
+                initiateCall(contact);
+              }, 1000);
+            }
+          });
         } catch (error) {
           console.log('Speech not available:', error);
+          // If speech module not available, initiate call after 1 second
+          setTimeout(() => {
+            initiateCall(contact);
+          }, 1000);
         }
+      } else {
+        // Web platform - no speech, initiate call after 1 second
+        setTimeout(() => {
+          initiateCall(contact);
+        }, 1000);
       }
-      setTimeout(() => {
-        initiateCall(contact);
-      }, 2000);
     }, 3000) as ReturnType<typeof setTimeout>;
   };
 
@@ -150,28 +235,72 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
-        Speech.speak(`Calling ${contact.name}...`, { rate: 1, language: 'en-US' });
+        Speech.speak(`Calling ${contact.name}...`, { 
+          rate: 1, 
+          language: 'en-US',
+          onDone: () => {
+            // Connect call immediately after speech finishes
+            setEmergencyState('in-call');
+            if (Platform.OS !== 'web') {
+              try {
+                Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+              } catch (error) {
+                console.log('Speech not available:', error);
+              }
+            }
+            setCallDuration(0);
+            callTimerRef.current = setInterval(() => {
+              setCallDuration(prev => prev + 1);
+            }, 1000) as ReturnType<typeof setInterval>;
+            if (Platform.OS !== 'web') {
+              Linking.openURL(`tel:${contact.phone}`);
+            }
+          },
+          onError: () => {
+            // If speech fails, connect after 2 seconds
+            setTimeout(() => {
+              setEmergencyState('in-call');
+              if (Platform.OS !== 'web') {
+                try {
+                  Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+                } catch (error) {
+                  console.log('Speech not available:', error);
+                }
+              }
+              setCallDuration(0);
+              callTimerRef.current = setInterval(() => {
+                setCallDuration(prev => prev + 1);
+              }, 1000) as ReturnType<typeof setInterval>;
+              if (Platform.OS !== 'web') {
+                Linking.openURL(`tel:${contact.phone}`);
+              }
+            }, 2000);
+          }
+        });
       } catch (error) {
         console.log('Native modules not available:', error);
+        // If speech module not available, connect after 2 seconds
+        setTimeout(() => {
+          setEmergencyState('in-call');
+          setCallDuration(0);
+          callTimerRef.current = setInterval(() => {
+            setCallDuration(prev => prev + 1);
+          }, 1000) as ReturnType<typeof setInterval>;
+          if (Platform.OS !== 'web') {
+            Linking.openURL(`tel:${contact.phone}`);
+          }
+        }, 2000);
       }
+    } else {
+      // Web platform - no speech, connect after 2 seconds
+      setTimeout(() => {
+        setEmergencyState('in-call');
+        setCallDuration(0);
+        callTimerRef.current = setInterval(() => {
+          setCallDuration(prev => prev + 1);
+        }, 1000) as ReturnType<typeof setInterval>;
+      }, 2000);
     }
-    setTimeout(() => {
-      setEmergencyState('in-call');
-      if (Platform.OS !== 'web') {
-        try {
-          Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
-        } catch (error) {
-          console.log('Speech not available:', error);
-        }
-      }
-      setCallDuration(0);
-      callTimerRef.current = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000) as ReturnType<typeof setInterval>;
-      if (Platform.OS !== 'web') {
-        Linking.openURL(`tel:${contact.phone}`);
-      }
-    }, 3000);
   };
 
   const handleEndCall = () => {
@@ -180,12 +309,27 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, { rate: 1, language: 'en-US' });
+        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, { 
+          rate: 1, 
+          language: 'en-US',
+          onDone: () => {
+            // Go back immediately after speech finishes
+            router.back();
+          },
+          onError: () => {
+            // If speech fails, go back after 2 seconds
+            setTimeout(() => router.back(), 2000);
+          }
+        });
       } catch (error) {
         console.log('Native modules not available:', error);
+        // If speech module not available, go back after 2 seconds
+        setTimeout(() => router.back(), 2000);
       }
+    } else {
+      // Web platform - no speech, go back after 2 seconds
+      setTimeout(() => router.back(), 2000);
     }
-    setTimeout(() => router.back(), 3000);
   };
 
   const handleQuit = () => {
@@ -294,24 +438,37 @@ export default function EmergencyScreen() {
             <>
               <Text className="text-lg text-white font-medium mb-12 text-center opacity-90">Select Emergency Contact</Text>
               <View className="w-full gap-4 max-w-sm mb-8">
-                {mockContacts.map((contact) => (
+                {sortedContacts.map((contact) => (
                   <TouchableOpacity
                     key={contact.id}
                     className="bg-white py-5 px-6 rounded-2xl border-l-6 border-red-500"
                     onPress={() => handleSelectContact(contact)}
                     accessibilityLabel={`Call ${contact.name}`}
-                    accessibilityHint={`${contact.relationship} - ${contact.phone}`}
+                    accessibilityHint={`Emergency contact: ${contact.relationship}`}
                   >
-                    <View className="flex-row items-center gap-4">
-                      <View className="w-14 h-14 rounded-full bg-red-500/10 items-center justify-center">
-                        <Ionicons name="person" size={28} color="#EF4444" />
-                      </View>
+                    <View className="flex-row items-center justify-between">
                       <View className="flex-1">
-                        <Text className="text-xl font-bold text-blue-900 mb-1">{contact.name}</Text>
-                        <Text className="text-sm text-blue-900 opacity-70">{contact.relationship}</Text>
-                        <Text className="text-xs text-blue-900 opacity-60 mt-1">{contact.phone}</Text>
+                        <View className="flex-row items-center gap-2 mb-1">
+                          <Text className="text-lg font-bold text-gray-900">{contact.name}</Text>
+                          {contact.distance !== undefined && (
+                            <View className="bg-blue-100 px-2 py-1 rounded-full">
+                              <Text className="text-xs font-semibold text-blue-700">
+                                {contact.distance < 1 
+                                  ? `${(contact.distance * 1000).toFixed(0)}m` 
+                                  : `${contact.distance.toFixed(1)}km`}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text className="text-sm text-gray-600">{contact.relationship}</Text>
+                        {contact.location?.address && (
+                          <Text className="text-xs text-gray-500 mt-1">{contact.location.address}</Text>
+                        )}
+                        <Text className="text-xs text-gray-500 mt-1">{contact.phone}</Text>
                       </View>
-                      <Ionicons name="call" size={24} color="#EF4444" />
+                      <View className="ml-4">
+                        <Ionicons name="call" size={32} color="#EF4444" />
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}

@@ -80,16 +80,33 @@ export default function DashboardScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(featureMessage, { rate: 1, language: 'en-US' });
+        Speech.speak(featureMessage, { 
+          rate: 1, 
+          language: 'en-US',
+          onDone: () => {
+            // Route immediately after speech finishes
+            router.push(feature.route as any);
+          },
+          onError: () => {
+            // If speech fails, route after 2 seconds
+            setTimeout(() => {
+              router.push(feature.route as any);
+            }, 2000);
+          }
+        });
       } catch (error) {
         console.log('Speech not available:', error);
+        // If speech module not available, route after 2 seconds
+        setTimeout(() => {
+          router.push(feature.route as any);
+        }, 2000);
       }
+    } else {
+      // Web platform - no speech, route after 2 seconds
+      setTimeout(() => {
+        router.push(feature.route as any);
+      }, 2000);
     }
-
-    // Wait for speech to complete before routing (~4-5 seconds at rate 1)
-    setTimeout(() => {
-      router.push(feature.route as any);
-    }, 4500);
   };
 
   const handleRepeatInstructions = () => {
