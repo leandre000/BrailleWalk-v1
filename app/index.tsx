@@ -17,14 +17,13 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [authState, setAuthState] = useState<AuthState>('idle');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('both');
-  const [speechRate] = useState<number>(0.7);
+  const [speechRate] = useState<number>(1);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.stop();
         Speech.speak(welcomeMessage, { rate: speechRate });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
@@ -64,8 +63,7 @@ export default function AuthScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.stop();
-        Speech.speak(authMessage, { rate: speechRate });
+        Speech.speak(authMessage, { rate: speechRate, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -88,16 +86,33 @@ export default function AuthScreen() {
 
         if (Platform.OS !== 'web') {
           try {
-            Speech.stop();
-            Speech.speak(successMessage, { rate: speechRate });
+            Speech.speak(successMessage, { 
+              rate: speechRate, 
+              language: 'en-US',
+              onDone: () => {
+                // Route immediately after speech finishes
+                router.replace('/dashboard');
+              },
+              onError: () => {
+                // If speech fails, route after 2 seconds
+                setTimeout(() => {
+                  router.replace('/dashboard');
+                }, 2000);
+              }
+            });
           } catch (error) {
             console.log('Speech not available:', error);
+            // If speech module not available, route after 2 seconds
+            setTimeout(() => {
+              router.replace('/dashboard');
+            }, 2000);
           }
+        } else {
+          // Web platform - no speech, route after 2 seconds
+          setTimeout(() => {
+            router.replace('/dashboard');
+          }, 2000);
         }
-
-        setTimeout(() => {
-          router.replace('/dashboard');
-        }, 2500);
       } else {
         setAuthState('failed');
         if (Platform.OS !== 'web') {
@@ -108,8 +123,7 @@ export default function AuthScreen() {
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
         if (Platform.OS !== 'web') {
           try {
-            Speech.stop();
-            Speech.speak(failMessage, { rate: speechRate });
+            Speech.speak(failMessage, { rate: speechRate, language: 'en-US' });
           } catch (error) {
             console.log('Speech not available:', error);
           }

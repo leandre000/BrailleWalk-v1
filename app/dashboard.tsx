@@ -29,7 +29,7 @@ export default function DashboardScreen() {
       id: 'navigate',
       title: 'Navigate',
       description: 'Get real-time walking guidance and obstacle detection',
-      icon: <Ionicons name="navigate" size={64} color="#0047AB" />,
+      icon: <Ionicons name="navigate" size={50} color="#0047AB" />,
       route: '/navigate',
       color: '#10B981'
     },
@@ -37,7 +37,7 @@ export default function DashboardScreen() {
       id: 'scan',
       title: 'Scan Object',
       description: 'Read text, identify objects, and describe your surroundings',
-      icon: <Feather name="camera" size={64} color="#0047AB" />,
+      icon: <Feather name="camera" size={50} color="#0047AB" />,
       route: '/scan',
       color: '#3B82F6'
     },
@@ -45,7 +45,7 @@ export default function DashboardScreen() {
       id: 'emergency',
       title: 'I need help',
       description: 'Contact your caregiver and share your location',
-      icon: <Ionicons name="call" size={64} color="#0047AB" />,
+      icon: <Ionicons name="call" size={50} color="#0047AB" />,
       route: '/emergency',
       color: '#EF4444'
     }
@@ -56,7 +56,7 @@ export default function DashboardScreen() {
       'Welcome to BrailleWalk dashboard. You have three main features available: Navigate for walking guidance, Scan Object for reading text and identifying objects, and I need help for emergency contacts. Tap any feature to get started.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Speech.speak(welcomeMessage, { rate: 1 });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -80,15 +80,33 @@ export default function DashboardScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(featureMessage, { rate: 0.7 });
+        Speech.speak(featureMessage, { 
+          rate: 1, 
+          language: 'en-US',
+          onDone: () => {
+            // Route immediately after speech finishes
+            router.push(feature.route as any);
+          },
+          onError: () => {
+            // If speech fails, route after 2 seconds
+            setTimeout(() => {
+              router.push(feature.route as any);
+            }, 2000);
+          }
+        });
       } catch (error) {
         console.log('Speech not available:', error);
+        // If speech module not available, route after 2 seconds
+        setTimeout(() => {
+          router.push(feature.route as any);
+        }, 2000);
       }
+    } else {
+      // Web platform - no speech, route after 2 seconds
+      setTimeout(() => {
+        router.push(feature.route as any);
+      }, 2000);
     }
-
-    setTimeout(() => {
-      router.push(feature.route as any);
-    }, 1500);
   };
 
   const handleRepeatInstructions = () => {
@@ -100,7 +118,7 @@ export default function DashboardScreen() {
     
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(instructionsMessage, { rate: 0.7 });
+        Speech.speak(instructionsMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -133,7 +151,7 @@ export default function DashboardScreen() {
                 accessibilityHint={feature.description}
               >
                 <View 
-                  className="w-32 h-32 rounded-full bg-white items-center justify-center mb-3 border-4"
+                  className="w-24 h-24 rounded-full bg-white items-center justify-center mb-3 border-4"
                   style={{ borderColor: selectedFeature === feature.id ? feature.color : 'transparent' }}
                 >
                   {feature.icon}

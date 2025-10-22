@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCameraPermissions, CameraView } from 'expo-camera';
@@ -9,6 +9,8 @@ import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import ScanningLine from '@/components/ScanningLine';
+import ScannerFrame from '@/components/ScannerFrame';
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result';
 type ScanMode = 'auto' | 'text' | 'object' | 'barcode';
@@ -36,8 +38,10 @@ export default function ScanScreen() {
   const [result, setResult] = useState<string>('');
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [detectedObjects, setDetectedObjects] = useState<DetectedObject[]>([]);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const cameraRef = React.useRef<any>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mockTextResults = [
     'Stop sign ahead. Please be careful.',
@@ -58,29 +62,38 @@ export default function ScanScreen() {
   ];
 
   useEffect(() => {
-    const welcomeMessage = `Scanning mode activated. Current mode: ${scanMode}. Point camera at text or objects to analyze. Tap to scan or use mode selector to change detection type.`;
+    // Request camera permission on mount
+    const initCamera = async () => {
+      if (!permission) {
+        return;
+      }
+      
+      if (!permission.granted) {
+        const result = await requestPermission();
+        console.log('Camera permission result:', result);
+      }
+    };
+
+    initCamera();
+
+    // Reduced speech - only announce mode
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: 0.7 });
+        Speech.speak(`${scanMode} mode`, { rate: 1 });
       } catch (error) {
         console.log('Speech not available:', error);
       }
     }
-    
-    if (permission && !permission.granted) {
-      requestPermission();
-    }
-
-    scanTimeoutRef.current = setTimeout(() => {
-      handleScan();
-    }, 3000) as ReturnType<typeof setTimeout>;
 
     return () => {
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
       }
+      if (resultTimeoutRef.current) {
+        clearTimeout(resultTimeoutRef.current);
+      }
     };
-  }, [permission, requestPermission, scanMode]);
+  }, [scanMode]);
 
   const handleScan = async () => {
     if (scanState === 'scanning' || scanState === 'analyzing') return;
@@ -90,21 +103,27 @@ export default function ScanScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Scanning in progress...', { rate: 0.7 });
+        Speech.speak('Scanning', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
     }
 
+    // Capture photo from camera
+    if (cameraRef.current && Platform.OS !== 'web') {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+          base64: false,
+        });
+        setCapturedImage(photo.uri);
+      } catch (error) {
+        console.log('Camera capture error:', error);
+      }
+    }
+
     setTimeout(async () => {
       setScanState('analyzing');
-      if (Platform.OS !== 'web') {
-        try {
-          Speech.speak('Analyzing image with AI...', { rate: 0.7 });
-        } catch (error) {
-          console.log('Speech not available:', error);
-        }
-      }
       
       setTimeout(() => {
         const scanResult = performAIAnalysis();
@@ -127,14 +146,71 @@ export default function ScanScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
             }
             
-            Speech.speak(scanResult.content, { rate: 0.6 });
+            // Reduced speech - just the result, wait for it to finish
+            Speech.speak(scanResult.content, { 
+              rate: 1,
+              onDone: () => {
+                console.log('Speech finished, resetting to idle in 1s');
+                // Wait 1 more second after speech finishes, then reset
+                resultTimeoutRef.current = setTimeout(() => {
+                  console.log('Resetting to idle from result');
+                  setScanState('idle');
+                  setResult('');
+                  setCapturedImage(null);
+                }, 1000) as ReturnType<typeof setTimeout>;
+              },
+              onError: () => {
+                console.log('Speech error, resetting to idle in 2s');
+                // If speech fails, reset after 2 seconds anyway
+                resultTimeoutRef.current = setTimeout(() => {
+                  console.log('Resetting to idle from result');
+                  setScanState('idle');
+                  setResult('');
+                  setCapturedImage(null);
+                }, 2000) as ReturnType<typeof setTimeout>;
+              }
+            });
           } catch (error) {
             console.log('Native modules not available:', error);
+            // If speech module not available, reset after 2 seconds
+            resultTimeoutRef.current = setTimeout(() => {
+              console.log('Resetting to idle from result (no speech)');
+              setScanState('idle');
+              setResult('');
+              setCapturedImage(null);
+            }, 2000) as ReturnType<typeof setTimeout>;
           }
+        } else {
+          // Web platform - no speech, reset after 2 seconds
+          resultTimeoutRef.current = setTimeout(() => {
+            console.log('Resetting to idle from result (web)');
+            setScanState('idle');
+            setResult('');
+            setCapturedImage(null);
+          }, 2000) as ReturnType<typeof setTimeout>;
         }
-      }, 2500);
-    }, 2000);
+      }, 2000);
+    }, 1500);
   };
+
+  // Continuous scanning - automatically starts when idle
+  useEffect(() => {
+    console.log('State:', scanState, 'Permission:', permission?.granted);
+    
+    if (scanState === 'idle' && permission?.granted) {
+      console.log('Starting scan in 2 seconds...');
+      scanTimeoutRef.current = setTimeout(() => {
+        console.log('Triggering handleScan');
+        handleScan();
+      }, 2000) as ReturnType<typeof setTimeout>;
+    }
+
+    return () => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [scanState, permission]);
 
   const performAIAnalysis = () => {
     switch (scanMode) {
@@ -189,43 +265,28 @@ export default function ScanScreen() {
       }
     }
     
-    const modeMessages = {
-      auto: 'Auto mode selected. Will detect both text and objects.',
-      text: 'Text mode selected. Optimized for reading signs and documents.',
-      object: 'Object mode selected. Optimized for identifying objects and people.',
-      barcode: 'Barcode mode selected. Optimized for scanning barcodes and QR codes.'
-    };
-    
+    // Reduced speech - just mode name
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(modeMessages[mode], { rate: 0.7 });
+        Speech.speak(`${mode} mode`, { rate: 1 });
       } catch (error) {
         console.log('Speech not available:', error);
       }
     }
   };
 
-  const handleRescan = () => {
-    setScanState('idle');
-    setResult('');
-    if (Platform.OS !== 'web') {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        Speech.speak('Ready to scan again. Point camera at target.');
-      } catch (error) {
-        console.log('Native modules not available:', error);
-      }
-    }
-  };
 
   const handleQuit = () => {
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
     }
+    if (resultTimeoutRef.current) {
+      clearTimeout(resultTimeoutRef.current);
+    }
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Exiting scan mode');
+        Speech.speak('Exiting', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -233,18 +294,6 @@ export default function ScanScreen() {
     router.back();
   };
 
-  const handleRepeatResult = () => {
-    if (result) {
-      if (Platform.OS !== 'web') {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          Speech.speak(result, { rate: 0.6 });
-        } catch (error) {
-          console.log('Native modules not available:', error);
-        }
-      }
-    }
-  };
 
   if (!permission) {
     return (
@@ -259,10 +308,23 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <GradientBackground>
-        <View className="flex-1">
-          <Text className="text-xl text-white text-center mb-5">Camera permission required</Text>
-          <TouchableOpacity className="bg-white py-4 px-8 rounded-3xl" onPress={requestPermission}>
-            <Text className="text-lg font-bold text-blue-900">Grant Permission</Text>
+        <View 
+          className="flex-1 items-center justify-center px-6"
+          style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
+        >
+          <View className="items-center ">
+            <MaterialIcons name="camera-alt" size={100} color="#FFFFFF" style={{ opacity: 0.8 }} />
+            <Text className="text-2xl font-bold text-white text-center mt-8 mb-4">Camera Access Required</Text>
+            <Text className="text-base text-white text-center opacity-80 mb-8">
+              BrailleWalk needs camera access to scan text and identify objects for you.
+            </Text>
+          </View>
+          <TouchableOpacity 
+            className="bg-white py-4 px-8 rounded-full" 
+            onPress={requestPermission}
+            accessibilityLabel="Grant camera permission"
+          >
+            <Text className="text-lg font-bold text-blue-900">Grant Camera Access</Text>
           </TouchableOpacity>
         </View>
       </GradientBackground>
@@ -272,86 +334,113 @@ export default function ScanScreen() {
   return (
     <GradientBackground>
       <View 
-        className="flex-1"
-        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+        className="flex-1 gap-y-4"
+        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-10">
-          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
-          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
+        <View className="items-center gap-y-2">
+          <Text className="text-5xl font-bold text-white ">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-xl text-white font-semibold mb-5 text-center">Scanning mode activated</Text>
+        <View className="items-center justify-center px-6 gap-y-2">
+          <Text className="text-lg text-white font-medium text-center opacity-90">Scanning mode activated</Text>
 
-          <View className="flex-row gap-2 mb-7.5 px-5">
+          <View className="flex-row gap-3  px-4">
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
-                scanMode === 'auto' ? 'bg-white border-white' : ''
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
+                scanMode === 'auto' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
               }`}
               onPress={() => handleModeChange('auto')}
               accessibilityLabel="Auto mode"
             >
-              <MaterialIcons name="flash-auto" size={16} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-xs font-semibold ${
+              <MaterialIcons name="flash-auto" size={18} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
+              <Text className={`text-sm font-semibold ${
                 scanMode === 'auto' ? 'text-blue-900' : 'text-white'
               }`}>Auto</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
-                scanMode === 'text' ? 'bg-white border-white' : ''
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
+                scanMode === 'text' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
               }`}
               onPress={() => handleModeChange('text')}
               accessibilityLabel="Text mode"
             >
-              <MaterialIcons name="text-fields" size={16} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-xs font-semibold ${
+              <MaterialIcons name="text-fields" size={18} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
+              <Text className={`text-sm font-semibold ${
                 scanMode === 'text' ? 'text-blue-900' : 'text-white'
               }`}>Text</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
-                scanMode === 'object' ? 'bg-white border-white' : ''
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
+                scanMode === 'object' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
               }`}
               onPress={() => handleModeChange('object')}
               accessibilityLabel="Object mode"
             >
-              <MaterialIcons name="view-in-ar" size={16} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-xs font-semibold ${
+              <MaterialIcons name="view-in-ar" size={18} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
+              <Text className={`text-sm font-semibold ${
                 scanMode === 'object' ? 'text-blue-900' : 'text-white'
               }`}>Object</Text>
             </TouchableOpacity>
           </View>
 
-          <View className="w-70 h-70 rounded-2xl overflow-hidden mb-10 bg-white/10">
+          <View className="w-80 h-80 rounded-3xl overflow-hidden  bg-white/10 border-4 border-white/20">
             {scanState === 'result' ? (
-              <View className="flex-1 items-center justify-center">
-                <View className="w-full h-4/5 items-center justify-center bg-white/20">
-                  <Text className="text-8xl">📷</Text>
-                </View>
-                <Text className="text-sm text-white font-semibold mt-2.5 text-center">
-                  {scanResults[0]?.type === 'text' ? '📝 Text' : 
-                   scanResults[0]?.type === 'object' ? '📦 Object' : 
-                   '📊 Barcode'} Detected
-                </Text>
+              <View className="flex-1 items-center justify-center bg-black">
+                {capturedImage ? (
+                  <Image 
+                    source={{ uri: capturedImage }} 
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="w-full h-full items-center justify-center bg-white">
+                    <MaterialIcons 
+                      name={scanResults[0]?.type === 'text' ? 'text-fields' : 'view-in-ar'} 
+                      size={100} 
+                      color="#0047AB" 
+                    />
+                  </View>
+                )}
               </View>
             ) : (
-              Platform.OS !== 'web' ? (
-                <CameraView
-                  ref={cameraRef}
-                  className="flex-1"
-                  facing="back"
-                />
-              ) : (
-                <View className="flex-1 items-center justify-center bg-black/30">
-                  <Text className="text-2xl text-white">📷 Camera View</Text>
-                </View>
-              )
+              <View className="flex-1 relative">
+                {Platform.OS !== 'web' && permission?.granted ? (
+                  <>
+                    <CameraView
+                      ref={cameraRef}
+                      style={{ flex: 1, width: '100%', height: '100%' }}
+                      facing="back"
+                      mode="picture"
+                    />
+                    {/* Always show scanner frame */}
+                    <ScannerFrame />
+                    {/* Show scanning line when scanning or analyzing */}
+                    <ScanningLine isActive={scanState === 'scanning' || scanState === 'analyzing'} />
+                  </>
+                ) : Platform.OS !== 'web' ? (
+                  <View className="flex-1 items-center justify-center bg-black">
+                    <MaterialIcons name="no-photography" size={80} color="#FFFFFF" style={{ opacity: 0.5 }} />
+                    <Text className="text-white text-center mt-4">Camera permission needed</Text>
+                  </View>
+                ) : (
+                  <>
+                    <View className="flex-1 items-center justify-center bg-black/30">
+                      <MaterialIcons name="camera-alt" size={80} color="#FFFFFF" style={{ opacity: 0.5 }} />
+                    </View>
+                    {/* Always show scanner frame */}
+                    <ScannerFrame />
+                    {/* Show scanning line when scanning or analyzing */}
+                    <ScanningLine isActive={scanState === 'scanning' || scanState === 'analyzing'} />
+                  </>
+                )}
+              </View>
             )}
           </View>
 
-          <Text className="text-lg text-white font-semibold text-center px-8 min-h-15">
+          <Text className="text-base text-white font-medium text-center px-8 min-h-12 opacity-90">
             {scanState === 'idle' && `Point camera at ${scanMode === 'text' ? 'text' : scanMode === 'object' ? 'objects' : 'text or objects'} to scan`}
             {scanState === 'scanning' && 'Scanning in progress...'}
             {scanState === 'analyzing' && 'Analyzing with AI...'}
@@ -360,49 +449,12 @@ export default function ScanScreen() {
         </View>
 
         <View className="items-center gap-4">
-          <View className="flex-row gap-4 mb-2.5">
-            {scanState === 'result' && (
-              <>
-                <TouchableOpacity
-                  onPress={handleRepeatResult}
-                  className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
-                  accessibilityLabel="Repeat result"
-                  accessibilityHint="Repeat the scan result"
-                >
-                  <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
-                  <Text className="text-sm text-white font-medium">Repeat</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={handleRescan}
-                  className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
-                  accessibilityLabel="Scan again"
-                  accessibilityHint="Start a new scan"
-                >
-                  <MaterialIcons name="refresh" size={20} color="#FFFFFF" />
-                  <Text className="text-sm text-white font-medium">Scan Again</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            
-            {scanState === 'idle' && (
-              <TouchableOpacity
-                onPress={handleScan}
-                className="flex-row items-center gap-2 py-3 px-6 bg-green-500 rounded-3xl border border-green-600"
-                accessibilityLabel="Start scan"
-                accessibilityHint="Start scanning the current view"
-              >
-                <MaterialIcons name="camera-alt" size={24} color="#FFFFFF" />
-                <Text className="text-base text-white font-semibold">Scan Now</Text>
-              </TouchableOpacity>
-            )}
-          </View>
           
           <Waveform isActive={scanState === 'scanning' || scanState === 'analyzing'} />
           
           <TouchableOpacity
             onPress={handleQuit}
-            className="py-3 px-6 bg-red-500/20 rounded-3xl border border-red-500/40"
+            className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
             accessibilityLabel="Quit scanning"
             accessibilityHint="Exit scanning mode"
           >
