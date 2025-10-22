@@ -252,9 +252,7 @@ export default function EmergencyScreen() {
             callTimerRef.current = setInterval(() => {
               setCallDuration(prev => prev + 1);
             }, 1000) as ReturnType<typeof setInterval>;
-            if (Platform.OS !== 'web') {
-              Linking.openURL(`tel:${contact.phone}`);
-            }
+           
           },
           onError: () => {
             // If speech fails, connect after 2 seconds
@@ -284,9 +282,7 @@ export default function EmergencyScreen() {
           callTimerRef.current = setInterval(() => {
             setCallDuration(prev => prev + 1);
           }, 1000) as ReturnType<typeof setInterval>;
-          if (Platform.OS !== 'web') {
-            Linking.openURL(`tel:${contact.phone}`);
-          }
+         
         }, 2000);
       }
     } else {
@@ -363,79 +359,90 @@ export default function EmergencyScreen() {
   };
 
   const renderSendingLocation = () => (
-    <>
-      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Emergency Contact</Text>
-      <View className="mb-16">
-        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
-          <Ionicons name="location" size={120} color="#FFFFFF" />
-        </View>
+    <View className="items-center gap-y-6">
+      <Text className="text-lg text-white font-medium text-center opacity-90">Emergency Contact</Text>
+      <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
+        <Ionicons name="location" size={120} color="#FFFFFF" />
       </View>
-      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">Sending GPS location to the caregiver.</Text>
-    </>
+      <Text className="text-xl text-white font-semibold text-center px-8">Sending GPS location to the caregiver.</Text>
+    </View>
+  );
+
+  const renderMessageSent = () => (
+    <View className="items-center gap-y-6">
+      <Text className="text-lg text-white font-medium text-center opacity-90">Message Sent</Text>
+      <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
+        <Ionicons name="checkmark-circle" size={120} color="#10B981" />
+      </View>
+      <View className="gap-y-2">
+        <Text className="text-xl text-white font-semibold text-center px-8">
+          Emergency message sent to {selectedContact?.name}
+        </Text>
+        <Text className="text-base text-white text-center opacity-80 px-8">
+          Initiating call...
+        </Text>
+      </View>
+    </View>
   );
 
   const renderCalling = () => (
-    <>
-      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Ringing</Text>
-      <View className="mb-16">
-        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
-          <Ionicons name="call" size={120} color="#FFFFFF" />
-        </View>
+    <View className="items-center gap-y-6">
+      <Text className="text-lg text-white font-medium text-center opacity-90">Ringing</Text>
+      <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-white">
+        <Ionicons name="call" size={120} color="#FFFFFF" />
       </View>
-      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">Calling {selectedContact?.name}...</Text>
-    </>
+      <Text className="text-xl text-white font-semibold text-center px-8">Calling {selectedContact?.name}...</Text>
+    </View>
   );
 
   const renderInCall = () => (
-    <>
-      <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">{selectedContact?.name || 'Emergency Contact'}</Text>
-      <View className="mb-16">
-        <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
-          <Ionicons name="mic" size={120} color="#10B981" />
-        </View>
+    <View className="items-center gap-y-6">
+      <Text className="text-lg text-white font-medium text-center opacity-90">{selectedContact?.name || 'Emergency Contact'}</Text>
+      <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
+        <Ionicons name="mic" size={120} color="#10B981" />
       </View>
-      <Text className="text-xl text-white font-semibold text-center px-8 mb-8">
-        Call in progress
-      </Text>
-      <Text className="text-2xl text-white font-bold text-center mb-10">
-        {formatCallDuration(callDuration)}
-      </Text>
-      <View className="items-center mb-8">
-        <TouchableOpacity 
-          className="w-20 h-20 rounded-full bg-red-500 items-center justify-center border-4 border-red-600" 
-          onPress={handleEndCall}
-          accessibilityLabel="End call"
-        >
-          <Ionicons name="call" size={40} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
-        </TouchableOpacity>
+      <View className="gap-y-4 items-center">
+        <Text className="text-xl text-white font-semibold text-center px-8">
+          Call in progress
+        </Text>
+        <Text className="text-2xl text-white font-bold text-center">
+          {formatCallDuration(callDuration)}
+        </Text>
       </View>
+      <TouchableOpacity 
+        className="w-20 h-20 rounded-full bg-red-500 items-center justify-center border-4 border-red-600" 
+        onPress={handleEndCall}
+        accessibilityLabel="End call"
+      >
+        <Ionicons name="call" size={40} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+      </TouchableOpacity>
       {currentLocation && (
-        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full mt-4">
+        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full">
           <Ionicons name="location-outline" size={18} color="#FFFFFF" style={{ opacity: 0.8 }} />
-          <Text className="text-xs text-white opacity-80 flex-1">
+          <Text className="text-xs text-white opacity-80">
             Location shared: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
           </Text>
         </View>
       )}
-    </>
+    </View>
   );
 
   return (
     <GradientBackground>
       <View 
-        className="flex-1"
+        className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-12">
-          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+        <View className="items-center gap-y-2">
+          <Text className="text-5xl font-bold text-white">BrailleWalk</Text>
           <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View className="flex-1 items-center justify-center px-6">
+        <View className="items-center justify-center px-6 gap-y-6">
           {emergencyState === 'selecting' && (
-            <>
-              <Text className="text-lg text-white font-medium mb-12 text-center opacity-90">Select Emergency Contact</Text>
-              <View className="w-full gap-4 max-w-sm mb-8">
+            <View className="items-center gap-y-6 w-full">
+              <Text className="text-lg text-white font-medium text-center opacity-90">Select Emergency Contact</Text>
+              <View className="w-full gap-4 max-w-sm">
                 {sortedContacts.map((contact) => (
                   <TouchableOpacity
                     key={contact.id}
@@ -471,34 +478,35 @@ export default function EmergencyScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </>
+            </View>
           )}
           {emergencyState === 'sending-location' && renderSendingLocation()}
+          {emergencyState === 'message-sent' && renderMessageSent()}
           {emergencyState === 'calling' && renderCalling()}
           {emergencyState === 'in-call' && renderInCall()}
           {emergencyState === 'ended' && (
-            <>
-              <Text className="text-lg text-white font-medium mb-16 text-center opacity-90">Call Ended</Text>
-              <View className="mb-16">
-                <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
-                  <Ionicons name="checkmark-circle" size={120} color="#10B981" />
-                </View>
+            <View className="items-center gap-y-6">
+              <Text className="text-lg text-white font-medium text-center opacity-90">Call Ended</Text>
+              <View className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4 border-green-500">
+                <Ionicons name="checkmark-circle" size={120} color="#10B981" />
               </View>
-              <Text className="text-xl text-white font-semibold text-center px-8 mb-8">
-                Call ended successfully
-              </Text>
-              <Text className="text-base text-white text-center opacity-80">
-                Duration: {formatCallDuration(callDuration)}
-              </Text>
-            </>
+              <View className="gap-y-2">
+                <Text className="text-xl text-white font-semibold text-center px-8">
+                  Call ended successfully
+                </Text>
+                <Text className="text-base text-white text-center opacity-80">
+                  Duration: {formatCallDuration(callDuration)}
+                </Text>
+              </View>
+            </View>
           )}
         </View>
 
-        <View className="items-center gap-4">
+        <View className="items-center">
           {emergencyState !== 'in-call' && emergencyState !== 'calling' && emergencyState !== 'sending-location' && (
             <TouchableOpacity
               onPress={handleQuit}
-              className="mt-4 py-3 px-8 bg-white/10 rounded-full border border-white/20"
+              className="py-3 px-8 bg-white/10 rounded-full border border-white/20"
               accessibilityLabel="Go back"
               accessibilityHint="Return to dashboard"
             >
