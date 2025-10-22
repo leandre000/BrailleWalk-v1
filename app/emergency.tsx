@@ -35,27 +35,27 @@ interface EmergencyMessage {
 }
 
 const mockContacts: Contact[] = [
-  { 
-    id: '1', 
-    name: 'UWIMANA Lucy', 
-    phone: '0788811121', 
-    relationship: 'Primary Caregiver', 
+  {
+    id: '1',
+    name: 'UWIMANA Lucy',
+    phone: '0788811121',
+    relationship: 'Primary Caregiver',
     isPrimary: true,
     location: { latitude: -1.9441, longitude: 30.0619, address: 'Kigali, Gasabo District' }
   },
-  { 
-    id: '2', 
-    name: 'HABIMANA Bill', 
-    phone: '0780000012', 
-    relationship: 'Family Member', 
+  {
+    id: '2',
+    name: 'HABIMANA Bill',
+    phone: '0780000012',
+    relationship: 'Family Member',
     isPrimary: false,
     location: { latitude: -1.9536, longitude: 30.0606, address: 'Kigali, Kicukiro District' }
   },
-  { 
-    id: '3', 
-    name: 'MUKARUTESI Kelly', 
-    phone: '0780121292', 
-    relationship: 'Emergency Contact', 
+  {
+    id: '3',
+    name: 'MUKARUTESI Kelly',
+    phone: '0780121292',
+    relationship: 'Emergency Contact',
     isPrimary: false,
     location: { latitude: -1.9706, longitude: 30.1044, address: 'Kigali, Nyarugenge District' }
   },
@@ -107,7 +107,7 @@ export default function EmergencyScreen() {
     const R = 6371; // Earth's radius in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -121,7 +121,7 @@ export default function EmergencyScreen() {
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
-        
+
         // Calculate distances and sort contacts by proximity
         const contactsWithDistance = mockContacts.map(contact => {
           if (contact.location) {
@@ -135,7 +135,7 @@ export default function EmergencyScreen() {
           }
           return contact;
         });
-        
+
         // Sort by distance (nearest first), then by isPrimary
         const sorted = contactsWithDistance.sort((a, b) => {
           if (a.distance !== undefined && b.distance !== undefined) {
@@ -145,7 +145,7 @@ export default function EmergencyScreen() {
           if (!a.isPrimary && b.isPrimary) return 1;
           return 0;
         });
-        
+
         setSortedContacts(sorted);
         console.log('Contacts sorted by distance:', sorted.map(c => ({ name: c.name, distance: c.distance?.toFixed(2) })));
       }
@@ -156,7 +156,7 @@ export default function EmergencyScreen() {
 
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
-    
+
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
@@ -165,13 +165,13 @@ export default function EmergencyScreen() {
         console.log('Native modules not available:', error);
       }
     }
-    
+
     await sendEmergencyMessage(contact);
   };
 
   const sendEmergencyMessage = async (contact: Contact) => {
     setEmergencyState('sending-location');
-    
+
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
@@ -179,9 +179,9 @@ export default function EmergencyScreen() {
         console.log('Haptics not available:', error);
       }
     }
-    
+
     const message = emergencyMessages[emergencyType];
-    
+
     if (Platform.OS !== 'web') {
       try {
         Speech.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
@@ -200,8 +200,8 @@ export default function EmergencyScreen() {
       setEmergencyState('message-sent');
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, { 
-            rate: 1, 
+          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, {
+            rate: 1,
             language: 'en-US',
             onDone: () => {
               // Initiate call immediately after speech finishes
@@ -235,8 +235,8 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
-        Speech.speak(`Calling ${contact.name}...`, { 
-          rate: 1, 
+        Speech.speak(`Calling ${contact.name}...`, {
+          rate: 1,
           language: 'en-US',
           onDone: () => {
             // Connect call immediately after speech finishes
@@ -252,7 +252,7 @@ export default function EmergencyScreen() {
             callTimerRef.current = setInterval(() => {
               setCallDuration(prev => prev + 1);
             }, 1000) as ReturnType<typeof setInterval>;
-           
+
           },
           onError: () => {
             // If speech fails, connect after 2 seconds
@@ -269,7 +269,7 @@ export default function EmergencyScreen() {
               callTimerRef.current = setInterval(() => {
                 setCallDuration(prev => prev + 1);
               }, 1000) as ReturnType<typeof setInterval>;
-             
+
             }, 2000);
           }
         });
@@ -282,7 +282,7 @@ export default function EmergencyScreen() {
           callTimerRef.current = setInterval(() => {
             setCallDuration(prev => prev + 1);
           }, 1000) as ReturnType<typeof setInterval>;
-         
+
         }, 2000);
       }
     } else {
@@ -303,8 +303,8 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, { 
-          rate: 1, 
+        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, {
+          rate: 1,
           language: 'en-US',
           onDone: () => {
             // Go back immediately after speech finishes
@@ -409,27 +409,19 @@ export default function EmergencyScreen() {
           {formatCallDuration(callDuration)}
         </Text>
       </View>
-      <TouchableOpacity 
-        className="w-20 h-20 rounded-full bg-red-500 items-center justify-center border-4 border-red-600" 
+      <TouchableOpacity
+        className="w-20 h-20 rounded-full bg-red-500 items-center justify-center border-4 border-red-600"
         onPress={handleEndCall}
         accessibilityLabel="End call"
       >
         <Ionicons name="call" size={40} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
       </TouchableOpacity>
-      {currentLocation && (
-        <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full">
-          <Ionicons name="location-outline" size={18} color="#FFFFFF" style={{ opacity: 0.8 }} />
-          <Text className="text-xs text-white opacity-80">
-            Location shared: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
-          </Text>
-        </View>
-      )}
     </View>
   );
 
   return (
     <GradientBackground>
-      <View 
+      <View
         className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
@@ -458,8 +450,8 @@ export default function EmergencyScreen() {
                           {contact.distance !== undefined && (
                             <View className="bg-blue-100 px-2 py-1 rounded-full">
                               <Text className="text-xs font-semibold text-blue-700">
-                                {contact.distance < 1 
-                                  ? `${(contact.distance * 1000).toFixed(0)}m` 
+                                {contact.distance < 1
+                                  ? `${(contact.distance * 1000).toFixed(0)}m`
                                   : `${contact.distance.toFixed(1)}km`}
                               </Text>
                             </View>
