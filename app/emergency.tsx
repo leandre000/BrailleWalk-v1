@@ -271,9 +271,7 @@ export default function EmergencyScreen() {
               callTimerRef.current = setInterval(() => {
                 setCallDuration(prev => prev + 1);
               }, 1000) as ReturnType<typeof setInterval>;
-              if (Platform.OS !== 'web') {
-                Linking.openURL(`tel:${contact.phone}`);
-              }
+             
             }, 2000);
           }
         });
@@ -500,7 +498,7 @@ export default function EmergencyScreen() {
           {emergencyState !== 'in-call' && emergencyState !== 'calling' && emergencyState !== 'sending-location' && (
             <TouchableOpacity
               onPress={handleQuit}
-              className="py-3 px-8 bg-white/10 rounded-full border border-white/20"
+              className="mt-4 py-3 px-8 bg-white/10 rounded-full border border-white/20"
               accessibilityLabel="Go back"
               accessibilityHint="Return to dashboard"
             >

@@ -312,7 +312,7 @@ export default function ScanScreen() {
           className="flex-1 items-center justify-center px-6"
           style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
         >
-          <View className="items-center mb-12">
+          <View className="items-center ">
             <MaterialIcons name="camera-alt" size={100} color="#FFFFFF" style={{ opacity: 0.8 }} />
             <Text className="text-2xl font-bold text-white text-center mt-8 mb-4">Camera Access Required</Text>
             <Text className="text-base text-white text-center opacity-80 mb-8">
@@ -334,18 +334,18 @@ export default function ScanScreen() {
   return (
     <GradientBackground>
       <View 
-        className="flex-1"
+        className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-12">
-          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+        <View className="items-center gap-y-2">
+          <Text className="text-5xl font-bold text-white ">BrailleWalk</Text>
           <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-lg text-white font-medium mb-8 text-center opacity-90">Scanning mode activated</Text>
+        <View className="items-center justify-center px-6 gap-y-2">
+          <Text className="text-lg text-white font-medium text-center opacity-90">Scanning mode activated</Text>
 
-          <View className="flex-row gap-3 mb-8 px-4">
+          <View className="flex-row gap-3  px-4">
             <TouchableOpacity
               className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
                 scanMode === 'auto' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
@@ -386,7 +386,7 @@ export default function ScanScreen() {
             </TouchableOpacity>
           </View>
 
-          <View className="w-80 h-80 rounded-3xl overflow-hidden mb-10 bg-white/10 border-4 border-white/20">
+          <View className="w-80 h-80 rounded-3xl overflow-hidden  bg-white/10 border-4 border-white/20">
             {scanState === 'result' ? (
               <View className="flex-1 items-center justify-center bg-black">
                 {capturedImage ? (

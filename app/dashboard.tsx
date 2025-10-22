@@ -29,7 +29,7 @@ export default function DashboardScreen() {
       id: 'navigate',
       title: 'Navigate',
       description: 'Get real-time walking guidance and obstacle detection',
-      icon: <Ionicons name="navigate" size={64} color="#0047AB" />,
+      icon: <Ionicons name="navigate" size={50} color="#0047AB" />,
       route: '/navigate',
       color: '#10B981'
     },
@@ -37,7 +37,7 @@ export default function DashboardScreen() {
       id: 'scan',
       title: 'Scan Object',
       description: 'Read text, identify objects, and describe your surroundings',
-      icon: <Feather name="camera" size={64} color="#0047AB" />,
+      icon: <Feather name="camera" size={50} color="#0047AB" />,
       route: '/scan',
       color: '#3B82F6'
     },
@@ -45,7 +45,7 @@ export default function DashboardScreen() {
       id: 'emergency',
       title: 'I need help',
       description: 'Contact your caregiver and share your location',
-      icon: <Ionicons name="call" size={64} color="#0047AB" />,
+      icon: <Ionicons name="call" size={50} color="#0047AB" />,
       route: '/emergency',
       color: '#EF4444'
     }
@@ -151,7 +151,7 @@ export default function DashboardScreen() {
                 accessibilityHint={feature.description}
               >
                 <View 
-                  className="w-32 h-32 rounded-full bg-white items-center justify-center mb-3 border-4"
+                  className="w-24 h-24 rounded-full bg-white items-center justify-center mb-3 border-4"
                   style={{ borderColor: selectedFeature === feature.id ? feature.color : 'transparent' }}
                 >
                   {feature.icon}

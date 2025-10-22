@@ -249,18 +249,18 @@ export default function NavigateScreen() {
   return (
     <GradientBackground>
       <View 
-        className="flex-1"
+        className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
-        <View className="items-center mb-12">
-          <Text className="text-5xl font-bold text-white mb-3">BrailleWalk</Text>
+        <View className="items-center gap-y-4">
+          <Text className="text-5xl font-bold text-white ">BrailleWalk</Text>
           <Text className="text-base text-white opacity-80">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-lg text-white font-medium mb-16 opacity-90">Navigation mode active</Text>
+        <View className="items-center justify-center px-6 gap-y-6">
+          <Text className="text-lg text-white font-medium  opacity-90">Navigation mode active</Text>
 
-          <View className="mb-16">
+          <View className="">
             <View 
               className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4"
               style={{ borderColor: getStatusColor() }}
@@ -270,22 +270,14 @@ export default function NavigateScreen() {
           </View>
 
           <Text 
-            className="text-xl font-semibold text-center px-8 mb-8"
+            className="text-xl font-semibold text-center px-8 "
             style={{ color: getStatusColor() }}
           >{instruction}</Text>
-          
-          {currentLocation && (
-            <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-full mt-4">
-              <MaterialIcons name="location-on" size={18} color="#FFFFFF" style={{ opacity: 0.8 }} />
-              <Text className="text-xs text-white opacity-80 flex-1">
-                Location: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
-              </Text>
-            </View>
-          )}
+        
         </View>
 
         <View className="items-center gap-4">
-          <View className="flex-row gap-4 mb-3">
+          <View className="flex-row gap-4 ">
             <TouchableOpacity
               onPress={handleRepeatInstruction}
               className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
