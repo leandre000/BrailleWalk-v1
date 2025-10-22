@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -162,44 +162,48 @@ export default function AuthScreen() {
     <GradientBackground>
       <StatusBar barStyle="light-content" />
       <TouchableOpacity
-        style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+        className="flex-1"
         onPress={handleAuthenticate}
         disabled={authState === 'authenticating' || authState === 'success'}
         activeOpacity={0.9}
         accessibilityLabel="Authenticate"
         accessibilityHint="Hold to authenticate with voice or face"
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>BrailleWalk</Text>
-          <Text style={styles.subtitle}>Your AI-powered vision assistant.</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-5xl font-bold text-white mb-2 text-center">BrailleWalk</Text>
+          <Text className="text-lg text-white opacity-90 mb-15 text-center">Your AI-powered vision assistant.</Text>
 
-          <View style={styles.iconContainer}>
-            <View style={[styles.micBackground, { borderColor: getIconColor() }]}>
+          <View className="mb-10">
+            <View 
+              className="w-50 h-50 rounded-full bg-white/15 items-center justify-center border-3"
+              style={{ borderColor: getIconColor() }}
+            >
               {getAuthIcon()}
               {authState === 'success' && (
-                <View style={styles.statusIcon}>
+                <View className="absolute top-2.5 right-2.5">
                   <MaterialIcons name="check-circle" size={40} color="#10B981" />
                 </View>
               )}
               {authState === 'failed' && (
-                <View style={styles.statusIcon}>
+                <View className="absolute top-2.5 right-2.5">
                   <MaterialIcons name="cancel" size={40} color="#EF4444" />
                 </View>
               )}
             </View>
           </View>
 
-          <View style={styles.authMethodContainer}>
-            <Text style={styles.authMethodText}>
+          <View className="mb-5 px-5 py-2 bg-white/10 rounded-2xl">
+            <Text className="text-sm text-white opacity-90 text-center font-medium">
               {authMethod === 'voice' ? 'Voice Recognition' :
                 authMethod === 'face' ? 'Face Recognition' :
                   'Voice + Face Recognition'}
             </Text>
           </View>
 
-          <Text style={styles.status}>{getStatusText()}</Text>
+          <Text className="text-xl text-white text-center font-semibold mb-10 px-8">{getStatusText()}</Text>
 
-          <View style={styles.waveformContainer}>
+          <View className="h-15">
             <Waveform isActive={authState === 'authenticating'} />
           </View>
         </View>
@@ -207,71 +211,3 @@ export default function AuthScreen() {
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: '700' as const,
-    color: '#FFFFFF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 60,
-    textAlign: 'center',
-  },
-  iconContainer: {
-    marginBottom: 40,
-  },
-  micBackground: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-  },
-  statusIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  status: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontWeight: '600' as const,
-    marginBottom: 40,
-    paddingHorizontal: 32,
-  },
-  waveformContainer: {
-    height: 60,
-  },
-  authMethodContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-  },
-  authMethodText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    textAlign: 'center',
-    fontWeight: '500' as const,
-  },
-});

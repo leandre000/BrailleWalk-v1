@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Alert, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -234,53 +234,62 @@ export default function NavigateScreen() {
   return (
     <GradientBackground>
       <StatusBar barStyle="light-content" />
-      <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>BrailleWalk</Text>
-          <Text style={styles.subtitle}>Your AI-powered vision assistant.</Text>
+      <View 
+        className="flex-1"
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+      >
+        <View className="items-center mb-10">
+          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.modeText}>Navigation mode active</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-xl text-white font-semibold mb-15">Navigation mode active</Text>
 
-          <View style={styles.compassContainer}>
-            <View style={[styles.compassCircle, { borderColor: getStatusColor() }]}>
+          <View className="mb-15">
+            <View 
+              className="w-60 h-60 rounded-full bg-white/15 items-center justify-center border-3"
+              style={{ borderColor: getStatusColor() }}
+            >
               {getIcon()}
             </View>
           </View>
 
-          <Text style={[styles.instruction, { color: getStatusColor() }]}>{instruction}</Text>
+          <Text 
+            className="text-2xl font-semibold text-center px-8 mb-5"
+            style={{ color: getStatusColor() }}
+          >{instruction}</Text>
           
           {currentLocation && (
-            <View style={styles.locationInfo}>
+            <View className="flex-row items-center gap-2 px-5 py-3 bg-white/10 rounded-2xl mt-2.5">
               <MaterialIcons name="location-on" size={16} color="#FFFFFF" style={{ opacity: 0.7 }} />
-              <Text style={styles.locationText}>
+              <Text className="text-xs text-white opacity-70 flex-1">
                 Location: {currentLocation.coords.latitude.toFixed(4)}, {currentLocation.coords.longitude.toFixed(4)}
               </Text>
             </View>
           )}
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.controlButtons}>
+        <View className="items-center gap-4">
+          <View className="flex-row gap-4 mb-2.5">
             <TouchableOpacity
               onPress={handleRepeatInstruction}
-              style={styles.controlButton}
+              className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
               accessibilityLabel="Repeat instruction"
               accessibilityHint="Repeat the current navigation instruction"
             >
               <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
-              <Text style={styles.controlButtonText}>Repeat</Text>
+              <Text className="text-sm text-white font-medium">Repeat</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               onPress={handlePauseResume}
-              style={styles.controlButton}
+              className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
               accessibilityLabel={isPaused ? "Resume navigation" : "Pause navigation"}
               accessibilityHint={isPaused ? "Resume navigation" : "Pause navigation"}
             >
               {isPaused ? <MaterialIcons name="play-arrow" size={20} color="#FFFFFF" /> : <MaterialIcons name="pause" size={20} color="#FFFFFF" />}
-              <Text style={styles.controlButtonText}>{isPaused ? 'Resume' : 'Pause'}</Text>
+              <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
             </TouchableOpacity>
           </View>
           
@@ -288,122 +297,14 @@ export default function NavigateScreen() {
           
           <TouchableOpacity
             onPress={handleQuit}
-            style={styles.quitButton}
+            className="py-3 px-6 bg-red-500/20 rounded-3xl border border-red-500/40"
             accessibilityLabel="Quit navigation"
             accessibilityHint="Exit navigation mode"
           >
-            <Text style={styles.quitText}>Exit Navigation</Text>
+            <Text className="text-base text-white font-semibold">Exit Navigation</Text>
           </TouchableOpacity>
         </View>
       </View>
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: '700' as const,
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  modeText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-    marginBottom: 60,
-  },
-  compassContainer: {
-    marginBottom: 60,
-  },
-  compassCircle: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  instruction: {
-    fontSize: 22,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-    marginBottom: 20,
-  },
-  locationInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 15,
-    marginTop: 10,
-  },
-  locationText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.7,
-    flex: 1,
-  },
-  footer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  controlButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 10,
-  },
-  controlButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  controlButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500' as const,
-  },
-  quitButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
-  },
-  quitText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-  },
-});

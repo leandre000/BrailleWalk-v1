@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Camera, useCameraPermissions, CameraView } from 'expo-camera';
@@ -246,8 +246,8 @@ export default function ScanScreen() {
   if (!permission) {
     return (
       <GradientBackground>
-        <View style={styles.container}>
-          <Text style={styles.permissionText}>Requesting camera permission...</Text>
+        <View className="flex-1">
+          <Text className="text-xl text-white text-center mb-5">Requesting camera permission...</Text>
         </View>
       </GradientBackground>
     );
@@ -256,10 +256,10 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <GradientBackground>
-        <View style={styles.container}>
-          <Text style={styles.permissionText}>Camera permission required</Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        <View className="flex-1">
+          <Text className="text-xl text-white text-center mb-5">Camera permission required</Text>
+          <TouchableOpacity className="bg-white py-4 px-8 rounded-3xl" onPress={requestPermission}>
+            <Text className="text-lg font-bold text-blue-900">Grant Permission</Text>
           </TouchableOpacity>
         </View>
       </GradientBackground>
@@ -269,51 +269,66 @@ export default function ScanScreen() {
   return (
     <GradientBackground>
       <StatusBar barStyle="light-content" />
-      <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>BrailleWalk</Text>
-          <Text style={styles.subtitle}>Your AI-powered vision assistant.</Text>
+      <View 
+        className="flex-1"
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+      >
+        <View className="items-center mb-10">
+          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.modeText}>Scanning mode activated</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-xl text-white font-semibold mb-5 text-center">Scanning mode activated</Text>
 
-          <View style={styles.modeSelector}>
+          <View className="flex-row gap-2 mb-7.5 px-5">
             <TouchableOpacity
-              style={[styles.modeButton, scanMode === 'auto' && styles.activeModeButton]}
+              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
+                scanMode === 'auto' ? 'bg-white border-white' : ''
+              }`}
               onPress={() => handleModeChange('auto')}
               accessibilityLabel="Auto mode"
             >
               <MaterialIcons name="flash-auto" size={16} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
-              <Text style={[styles.modeButtonText, scanMode === 'auto' && styles.activeModeButtonText]}>Auto</Text>
+              <Text className={`text-xs font-semibold ${
+                scanMode === 'auto' ? 'text-blue-900' : 'text-white'
+              }`}>Auto</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.modeButton, scanMode === 'text' && styles.activeModeButton]}
+              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
+                scanMode === 'text' ? 'bg-white border-white' : ''
+              }`}
               onPress={() => handleModeChange('text')}
               accessibilityLabel="Text mode"
             >
               <MaterialIcons name="text-fields" size={16} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
-              <Text style={[styles.modeButtonText, scanMode === 'text' && styles.activeModeButtonText]}>Text</Text>
+              <Text className={`text-xs font-semibold ${
+                scanMode === 'text' ? 'text-blue-900' : 'text-white'
+              }`}>Text</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.modeButton, scanMode === 'object' && styles.activeModeButton]}
+              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 px-3 bg-white/10 rounded-2xl border border-white/20 ${
+                scanMode === 'object' ? 'bg-white border-white' : ''
+              }`}
               onPress={() => handleModeChange('object')}
               accessibilityLabel="Object mode"
             >
               <MaterialIcons name="view-in-ar" size={16} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
-              <Text style={[styles.modeButtonText, scanMode === 'object' && styles.activeModeButtonText]}>Object</Text>
+              <Text className={`text-xs font-semibold ${
+                scanMode === 'object' ? 'text-blue-900' : 'text-white'
+              }`}>Object</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.cameraContainer}>
+          <View className="w-70 h-70 rounded-2xl overflow-hidden mb-10 bg-white/10">
             {scanState === 'result' ? (
-              <View style={styles.resultContainer}>
-                <View style={styles.mockImage}>
-                  <Text style={styles.mockImageText}>📷</Text>
+              <View className="flex-1 items-center justify-center">
+                <View className="w-full h-4/5 items-center justify-center bg-white/20">
+                  <Text className="text-8xl">📷</Text>
                 </View>
-                <Text style={styles.resultType}>
+                <Text className="text-sm text-white font-semibold mt-2.5 text-center">
                   {scanResults[0]?.type === 'text' ? '📝 Text' : 
                    scanResults[0]?.type === 'object' ? '📦 Object' : 
                    '📊 Barcode'} Detected
@@ -323,18 +338,18 @@ export default function ScanScreen() {
               Platform.OS !== 'web' ? (
                 <CameraView
                   ref={cameraRef}
-                  style={styles.camera}
+                  className="flex-1"
                   facing="back"
                 />
               ) : (
-                <View style={styles.mockCamera}>
-                  <Text style={styles.mockCameraText}>📷 Camera View</Text>
+                <View className="flex-1 items-center justify-center bg-black/30">
+                  <Text className="text-2xl text-white">📷 Camera View</Text>
                 </View>
               )
             )}
           </View>
 
-          <Text style={styles.instruction}>
+          <Text className="text-lg text-white font-semibold text-center px-8 min-h-15">
             {scanState === 'idle' && `Point camera at ${scanMode === 'text' ? 'text' : scanMode === 'object' ? 'objects' : 'text or objects'} to scan`}
             {scanState === 'scanning' && 'Scanning in progress...'}
             {scanState === 'analyzing' && 'Analyzing with AI...'}
@@ -342,28 +357,28 @@ export default function ScanScreen() {
           </Text>
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.controlButtons}>
+        <View className="items-center gap-4">
+          <View className="flex-row gap-4 mb-2.5">
             {scanState === 'result' && (
               <>
                 <TouchableOpacity
                   onPress={handleRepeatResult}
-                  style={styles.controlButton}
+                  className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
                   accessibilityLabel="Repeat result"
                   accessibilityHint="Repeat the scan result"
                 >
                   <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
-                  <Text style={styles.controlButtonText}>Repeat</Text>
+                  <Text className="text-sm text-white font-medium">Repeat</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
                   onPress={handleRescan}
-                  style={styles.controlButton}
+                  className="flex-row items-center gap-1.5 py-2.5 px-4 bg-white/10 rounded-2xl border border-white/20"
                   accessibilityLabel="Scan again"
                   accessibilityHint="Start a new scan"
                 >
                   <MaterialIcons name="refresh" size={20} color="#FFFFFF" />
-                  <Text style={styles.controlButtonText}>Scan Again</Text>
+                  <Text className="text-sm text-white font-medium">Scan Again</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -371,12 +386,12 @@ export default function ScanScreen() {
             {scanState === 'idle' && (
               <TouchableOpacity
                 onPress={handleScan}
-                style={styles.scanButton}
+                className="flex-row items-center gap-2 py-3 px-6 bg-green-500 rounded-3xl border border-green-600"
                 accessibilityLabel="Start scan"
                 accessibilityHint="Start scanning the current view"
               >
                 <MaterialIcons name="camera-alt" size={24} color="#FFFFFF" />
-                <Text style={styles.scanButtonText}>Scan Now</Text>
+                <Text className="text-base text-white font-semibold">Scan Now</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -385,201 +400,14 @@ export default function ScanScreen() {
           
           <TouchableOpacity
             onPress={handleQuit}
-            style={styles.quitButton}
+            className="py-3 px-6 bg-red-500/20 rounded-3xl border border-red-500/40"
             accessibilityLabel="Quit scanning"
             accessibilityHint="Exit scanning mode"
           >
-            <Text style={styles.quitText}>Exit Scanning</Text>
+            <Text className="text-base text-white font-semibold">Exit Scanning</Text>
           </TouchableOpacity>
         </View>
       </View>
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: '700' as const,
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  modeText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modeSelector: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 30,
-    paddingHorizontal: 20,
-  },
-  modeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  activeModeButton: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
-  },
-  modeButtonText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-  },
-  activeModeButtonText: {
-    color: '#0047AB',
-  },
-  cameraContainer: {
-    width: 280,
-    height: 280,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  camera: {
-    flex: 1,
-  },
-  mockCamera: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  mockCameraText: {
-    fontSize: 24,
-    color: '#FFFFFF',
-  },
-  resultContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mockImage: {
-    width: '100%',
-    height: '80%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  mockImageText: {
-    fontSize: 80,
-  },
-  resultType: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  instruction: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-    minHeight: 60,
-  },
-  footer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  controlButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 10,
-  },
-  controlButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  controlButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500' as const,
-  },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: '#10B981',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#059669',
-  },
-  scanButtonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-  },
-  quitButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
-  },
-  quitText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600' as const,
-  },
-  permissionText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  permissionButton: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-  },
-  permissionButtonText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#0047AB',
-  },
-});

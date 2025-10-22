@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, AccessibilityInfo } from 'react-native';
+import { View, Animated, AccessibilityInfo } from 'react-native';
 
 interface WaveformProps {
   isActive?: boolean;
@@ -60,34 +60,18 @@ export default function Waveform({ isActive = true, color = '#FFFFFF' }: Wavefor
   }, [isActive, reduceMotion]);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-row items-center justify-center gap-1.5 h-10">
       {animations.map((anim, index) => (
         <Animated.View
           key={index}
-          style={[
-            styles.bar,
-            {
-              backgroundColor: color,
-              transform: [{ scaleY: anim }],
-            },
-          ]}
+          className="w-1 h-10 rounded-sm"
+          style={{
+            backgroundColor: color,
+            transform: [{ scaleY: anim }],
+          }}
         />
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    height: 40,
-  },
-  bar: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-  },
-});

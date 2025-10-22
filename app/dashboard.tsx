@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
@@ -107,33 +107,35 @@ export default function DashboardScreen() {
   return (
     <GradientBackground>
       <StatusBar barStyle="light-content" />
-      <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>BrailleWalk</Text>
-          <Text style={styles.subtitle}>Your AI-powered vision assistant.</Text>
+      <View 
+        className="flex-1"
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+      >
+        <View className="items-center mb-15">
+          <Text className="text-4xl font-bold text-white mb-2">BrailleWalk</Text>
+          <Text className="text-base text-white opacity-90">Your AI-powered vision assistant.</Text>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.prompt}>What do you want to do next?</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-xl text-white font-semibold mb-10 text-center">What do you want to do next?</Text>
 
-          <View style={styles.buttonContainer}>
+          <View className="w-full gap-4 max-w-sm">
             {features.map((feature) => (
               <TouchableOpacity
                 key={feature.id}
-                style={[
-                  styles.button,
-                  selectedFeature === feature.id && styles.selectedButton,
-                  { borderLeftColor: feature.color }
-                ]}
+                className={`bg-white py-5 px-6 rounded-2xl border-l-6 opacity-100 ${
+                  selectedFeature === feature.id ? 'bg-white/90 scale-98' : ''
+                }`}
+                style={{ borderLeftColor: feature.color }}
                 onPress={() => handleFeaturePress(feature)}
                 accessibilityLabel={feature.title}
                 accessibilityHint={feature.description}
               >
-                <View style={styles.buttonContent}>
-                  <View style={styles.iconContainer}>{feature.icon}</View>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.buttonText}>{feature.title}</Text>
-                    <Text style={styles.buttonDescription}>{feature.description}</Text>
+                <View className="flex-row items-center gap-4">
+                  <View className="w-12 h-12 rounded-3xl bg-blue-900/10 items-center justify-center">{feature.icon}</View>
+                  <View className="flex-1">
+                    <Text className="text-xl font-bold text-blue-900 mb-1">{feature.title}</Text>
+                    <Text className="text-sm text-blue-900 opacity-70 leading-4">{feature.description}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -141,20 +143,20 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        <View style={styles.footer}>
+        <View className="items-center gap-4">
           <TouchableOpacity
             onPress={handleRepeatInstructions}
-            style={styles.repeatButton}
+            className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-3xl border border-white/20"
             accessibilityLabel="Repeat instructions"
             accessibilityHint="Tap to hear the available options again"
           >
             <MaterialIcons name="volume-up" size={20} color="#FFFFFF" />
-            <Text style={styles.repeatText}>Repeat instructions</Text>
+            <Text className="text-sm text-white font-medium">Repeat instructions</Text>
           </TouchableOpacity>
 
           <Waveform isActive={isListening} />
 
-          <Text style={styles.tapText}>
+          <Text className="text-sm text-white opacity-70 text-center">
             {selectedFeature ? 'Loading feature...' : 'Tap any feature above to get started'}
           </Text>
         </View>
@@ -163,47 +165,3 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { alignItems: 'center', marginBottom: 60 },
-  title: { fontSize: 40, fontWeight: '700', color: '#FFFFFF', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#FFFFFF', opacity: 0.9 },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  prompt: { fontSize: 20, color: '#FFFFFF', fontWeight: '600', marginBottom: 40, textAlign: 'center' },
-  buttonContainer: { width: '100%', gap: 16, maxWidth: 400 },
-  button: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    borderLeftWidth: 6,
-    opacity: 1
-  },
-  selectedButton: { backgroundColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.98 }] },
-  buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 71, 171, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  textContainer: { flex: 1 },
-  buttonText: { fontSize: 20, fontWeight: '700', color: '#0047AB', marginBottom: 4 },
-  buttonDescription: { fontSize: 14, color: '#0047AB', opacity: 0.7, lineHeight: 18 },
-  footer: { alignItems: 'center', gap: 16 },
-  repeatButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)'
-  },
-  repeatText: { fontSize: 14, color: '#FFFFFF', fontWeight: '500' },
-  tapText: { fontSize: 14, color: '#FFFFFF', opacity: 0.7, textAlign: 'center' }
-});
