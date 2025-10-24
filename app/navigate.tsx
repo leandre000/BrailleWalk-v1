@@ -10,6 +10,8 @@ import * as Location from 'expo-location';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, NAVIGATION_COMMANDS } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 // Screen responsible for navigation
 
@@ -74,7 +76,7 @@ export default function NavigateScreen() {
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            Speech.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
+            speechManager.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Native modules not available:', error);
           }
@@ -85,7 +87,7 @@ export default function NavigateScreen() {
       
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation mode activated with limited location features.', { rate: 0.7 });
+          speechManager.speak('Navigation mode activated with limited location features.', { rate: 1 });
         } catch (err) {
           console.log('Speech not available:', err);
         }
@@ -126,19 +128,13 @@ export default function NavigateScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
           
-          Speech.speak(currentInstruction.text, { 
+          speechManager.speak(currentInstruction.text, { 
             rate: 1, 
-            language: 'en-US',
-            onDone: () => {
-              // Wait 1 second after speech finishes, then next instruction
-              instructionIndex++;
-              speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
-            },
-            onError: () => {
-              // If speech fails, proceed after 2 seconds
-              instructionIndex++;
-              speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
-            }
+            language: 'en-US'
+          }, () => {
+            // Wait 1 second after speech finishes, then next instruction
+            instructionIndex++;
+            speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
           });
         } catch (error) {
           console.log('Native modules not available:', error);
@@ -160,10 +156,14 @@ export default function NavigateScreen() {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
     }
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+    }
+    speechManager.stop();
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Exiting navigation mode', { rate: 1 });
+        speechManager.speak('Exiting navigation mode', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -184,16 +184,17 @@ export default function NavigateScreen() {
     if (isPaused) {
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation resumed', { rate: 1 });
+          speechManager.speak('Navigation resumed', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
       }
       startNavigationSequence();
     } else {
+      speechManager.stop();
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation paused', { rate: 1 });
+          speechManager.speak('Navigation paused', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -208,7 +209,7 @@ export default function NavigateScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        Speech.speak(instruction, { rate: 1, language: 'en-US' });
+        speechManager.speak(instruction, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -247,35 +248,47 @@ export default function NavigateScreen() {
     }
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    console.log(command,"in navigate")
+    // Use fuzzy matching to find the best command match
+    const match = matchCommand(command, NAVIGATION_COMMANDS, 0.6);
     
-    // Pause commands
-    if (lowerCommand.includes('pause') || lowerCommand.includes('stop')) {
-      if (!isPaused) {
-        Speech.speak('Pausing navigation', { rate: 1, language: 'en-US' });
-        handlePauseResume();
+    if (match) {
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
+      
+      // Handle matched command
+      if (match.command === 'pause') {
+        if (!isPaused) {
+          handlePauseResume();
+        }
       }
-    }
-    // Resume commands
-    else if (lowerCommand.includes('resume') || lowerCommand.includes('continue') || lowerCommand.includes('start')) {
-      if (isPaused) {
-        Speech.speak('Resuming navigation', { rate: 1, language: 'en-US' });
-        handlePauseResume();
+      else if (match.command === 'resume') {
+        if (isPaused) {
+          handlePauseResume();
+        }
       }
-    }
-    // Repeat commands
-    else if (lowerCommand.includes('repeat') || lowerCommand.includes('again') || lowerCommand.includes('what')) {
-      handleRepeatInstruction();
-    }
-    // Exit commands
-    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
-      Speech.speak('Exiting navigation', { rate: 1, language: 'en-US' });
-      handleQuit();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Say pause, resume, repeat, or exit', { rate: 1, language: 'en-US' });
+      else if (match.command === 'repeat') {
+        handleRepeatInstruction();
+      }
+      else if (match.command === 'exit') {
+        handleQuit();
+      }
+    } else {
+      // Command not recognized - provide helpful suggestions
+      const suggestions = getSuggestions(command, NAVIGATION_COMMANDS, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
+      } else {
+        errorMessage += "Try saying: pause, resume, repeat, or exit.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 
@@ -347,8 +360,8 @@ export default function NavigateScreen() {
         {/* Voice Command Listener */}
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
-          enabled={navState !== 'arrived'}
-          wakeWord="hey"
+          enabled={true}
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </View>

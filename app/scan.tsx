@@ -9,9 +9,11 @@ import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 import ScanningLine from '@/components/ScanningLine';
 import ScannerFrame from '@/components/ScannerFrame';
-import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, SCAN_COMMANDS } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result';
 type ScanMode = 'auto' | 'text' | 'object' | 'barcode';
@@ -40,9 +42,11 @@ export default function ScanScreen() {
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [detectedObjects, setDetectedObjects] = useState<DetectedObject[]>([]);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [autoScan, setAutoScan] = useState<boolean>(true);
   const cameraRef = React.useRef<any>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoScanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mockTextResults = [
     'Stop sign ahead. Please be careful.',
@@ -80,7 +84,7 @@ export default function ScanScreen() {
     // Reduced speech - only announce mode
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(`${scanMode} mode`, { rate: 1 });
+        speechManager.speak(`${scanMode} mode`, { rate: 1 });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -104,7 +108,7 @@ export default function ScanScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Scanning', { rate: 1 });
+        speechManager.speak('Scanning', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -148,28 +152,20 @@ export default function ScanScreen() {
             }
             
             // Reduced speech - just the result, wait for it to finish
-            Speech.speak(scanResult.content, { 
-              rate: 1,
-              onDone: () => {
-                console.log('Speech finished, resetting to idle in 1s');
-                // Wait 1 more second after speech finishes, then reset
-                resultTimeoutRef.current = setTimeout(() => {
-                  console.log('Resetting to idle from result');
+            speechManager.speak(scanResult.content, { 
+              rate: 1
+            }, () => {
+              console.log('Speech finished, resetting to idle in 1s');
+              // Wait 1 second after speech finishes before resetting
+              setTimeout(() => {
+                if (autoScan) {
+                  // In auto mode, reset to idle (which will trigger auto-scan again)
                   setScanState('idle');
-                  setResult('');
-                  setCapturedImage(null);
-                }, 1000) as ReturnType<typeof setTimeout>;
-              },
-              onError: () => {
-                console.log('Speech error, resetting to idle in 2s');
-                // If speech fails, reset after 2 seconds anyway
-                resultTimeoutRef.current = setTimeout(() => {
-                  console.log('Resetting to idle from result');
-                  setScanState('idle');
-                  setResult('');
-                  setCapturedImage(null);
-                }, 2000) as ReturnType<typeof setTimeout>;
-              }
+                } else {
+                  // In manual mode, stay on result screen
+                  console.log('Manual mode - staying on result screen');
+                }
+              }, 1000);
             });
           } catch (error) {
             console.log('Native modules not available:', error);
@@ -269,7 +265,7 @@ export default function ScanScreen() {
     // Reduced speech - just mode name
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(`${mode} mode`, { rate: 1 });
+        speechManager.speak(`${mode} mode`, { rate: 1 });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -287,7 +283,7 @@ export default function ScanScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Exiting', { rate: 1 });
+        speechManager.speak('Exiting', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -295,35 +291,55 @@ export default function ScanScreen() {
     router.back();
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Use fuzzy matching to find the best command match
+    const match = matchCommand(command, SCAN_COMMANDS, 0.6);
     
-    // Scan/Capture commands
-    if (lowerCommand.includes('scan') || lowerCommand.includes('capture') || lowerCommand.includes('take')) {
-      Speech.speak('Scanning', { rate: 1, language: 'en-US' });
-      handleScan();
-    }
-    // Mode change commands
-    else if (lowerCommand.includes('text')) {
-      handleModeChange('text');
-    }
-    else if (lowerCommand.includes('object')) {
-      handleModeChange('object');
-    }
-    else if (lowerCommand.includes('barcode')) {
-      handleModeChange('barcode');
-    }
-    else if (lowerCommand.includes('auto')) {
-      handleModeChange('auto');
-    }
-    // Exit commands
-    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
-      Speech.speak('Exiting scan mode', { rate: 1, language: 'en-US' });
-      handleQuit();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Say scan, text, object, auto, or exit', { rate: 1, language: 'en-US' });
+    if (match) {
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
+      
+      // Handle matched command
+      if (match.command === 'scan') {
+        handleScan();
+      }
+      else if (match.command === 'text') {
+        handleModeChange('text');
+      }
+      else if (match.command === 'object') {
+        handleModeChange('object');
+      }
+      else if (match.command === 'barcode') {
+        handleModeChange('barcode');
+      }
+      else if (match.command === 'auto') {
+        handleModeChange('auto');
+      }
+      else if (match.command === 'manual') {
+        // Toggle off auto mode
+        if (autoScan) {
+          setAutoScan(false);
+          speechManager.speak('Manual mode', { rate: 1, language: 'en-US' });
+        }
+      }
+      else if (match.command === 'exit') {
+        handleQuit();
+      }
+    } else {
+      // Command not recognized - provide helpful suggestions
+      const suggestions = getSuggestions(command, SCAN_COMMANDS, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
+      } else {
+        errorMessage += "Try saying: scan, text mode, object mode, or exit.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 
@@ -499,7 +515,7 @@ export default function ScanScreen() {
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
           enabled={true}
-          wakeWord="hey"
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </View>
