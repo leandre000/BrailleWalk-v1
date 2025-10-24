@@ -132,15 +132,6 @@ export default function VoiceCommandListener({
             }
         } catch (error) {
             console.error('Start listening error:', error);
-            // Trigger retry logic
-            if (retryCount < maxRetries) {
-                const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 8000);
-                
-                retryTimeoutRef.current = setTimeout(() => {
-                    setRetryCount(prev => prev + 1);
-                    startContinuousListening();
-                }, backoffDelay);
-            }
         }
     };
 
@@ -148,37 +139,38 @@ export default function VoiceCommandListener({
     useSpeechRecognitionEvent('result', async (event) => {
         const transcript = event.results[0]?.transcript?.toLowerCase() || '';
         const isFinal = event.isFinal || false;
-        
+        console.log(event)
         setRecognizedText(transcript);
-        
+
         // Don't process if app is speaking (echo cancellation)
         if (isPausedForSpeech) {
             return;
         }
-        
+
         // Continuous mode - ONLY process final results
-        if (continuousMode && transcript.trim() && isFinal) {
+        if (continuousMode && transcript.trim() &&
+            (isFinal || event.results[0]?.confidence > 0.6)) {
             // Debounce: prevent duplicate processing of same command
             if (transcript === lastProcessedCommand.current) {
                 return;
             }
-            
+
             lastProcessedCommand.current = transcript;
-            
+
             // Clear any pending debounce
             if (commandDebounceTimeout.current) {
                 clearTimeout(commandDebounceTimeout.current);
             }
-            
+
             // Reset after 2 seconds to allow same command again
             commandDebounceTimeout.current = setTimeout(() => {
                 lastProcessedCommand.current = '';
-            }, 2000);
-            
+            }, 3000);
+
             processCommand(transcript, 1.0);
             return;
         }
-        
+
         // Wake word mode
         if (!continuousMode && !isWaitingForCommand && ['hey', 'okay'].some(word => transcript.includes(word))) {
             wakeWordDetectedRef.current = true;
@@ -222,20 +214,19 @@ export default function VoiceCommandListener({
 
     // Handle errors with retry logic
     useSpeechRecognitionEvent('error', (event) => {
-        console.error(`Speech recognition error (attempt ${retryCount + 1}/${maxRetries}):`, event.error);
         setIsListening(false);
 
         // Check if it's a network error
         const isNetworkError = event.error === 'network' || event.error === 'no-speech' || event.error === 'audio-capture';
-        
+
         if (isNetworkError && retryCount >= maxRetries - 1) {
             // Network error after retries - notify user
             setNetworkError(true);
-            
+
             if (!hasNotifiedNetworkError.current && Platform.OS !== 'web') {
                 hasNotifiedNetworkError.current = true;
                 try {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
                     speechManager.speak(
                         'Voice commands are not available. Please check your internet connection and try again.',
                         { rate: 1, language: 'en-US' }
@@ -244,7 +235,7 @@ export default function VoiceCommandListener({
                     console.log('Could not notify user:', error);
                 }
             }
-            
+
             // Reset retry count and try again after 30 seconds
             setRetryCount(0);
             retryTimeoutRef.current = setTimeout(() => {
@@ -262,7 +253,7 @@ export default function VoiceCommandListener({
         if (retryCount < maxRetries) {
             const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 8000); // Max 8 seconds
             console.log(`Retrying in ${backoffDelay}ms...`);
-            
+
             retryTimeoutRef.current = setTimeout(() => {
                 if (enabled && permissionGranted) {
                     setRetryCount(prev => prev + 1);
@@ -274,7 +265,7 @@ export default function VoiceCommandListener({
             // Max retries reached
             console.error('Max retries reached. Speech recognition failed.');
             setRetryCount(0); // Reset for next time
-            
+
             // Try one more time after 10 seconds
             retryTimeoutRef.current = setTimeout(() => {
                 if (enabled && permissionGranted) {
@@ -295,11 +286,11 @@ export default function VoiceCommandListener({
         if (networkError) {
             setNetworkError(false);
             hasNotifiedNetworkError.current = false;
-            
+
             // Notify user that voice is back
             if (Platform.OS !== 'web') {
                 try {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
                     speechManager.speak('Voice commands are now available.', { rate: 1, language: 'en-US' });
                 } catch (error) {
                     console.log('Could not notify user:', error);
@@ -325,12 +316,12 @@ export default function VoiceCommandListener({
         if (commandText) {
             setConfidence(confidenceScore);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            
+
             // Provide voice confirmation if enabled
             if (confirmBeforeExecute) {
                 const confidencePercent = Math.round(confidenceScore * 100);
                 let confirmationMessage = '';
-                
+
                 if (confidenceScore >= 0.9) {
                     confirmationMessage = `Got it, ${commandText}`;
                 } else if (confidenceScore >= 0.7) {
@@ -338,9 +329,9 @@ export default function VoiceCommandListener({
                 } else {
                     confirmationMessage = `I think you said ${commandText}`;
                 }
-                
-                speechManager.speak(confirmationMessage, { 
-                    rate: 1.1, 
+
+                speechManager.speak(confirmationMessage, {
+                    rate: 1.1,
                     language: 'en-US'
                 }, () => {
                     onCommand(commandText, confidenceScore);
@@ -412,7 +403,7 @@ export default function VoiceCommandListener({
             if (commandDebounceTimeout.current) {
                 clearTimeout(commandDebounceTimeout.current);
             }
-            
+
             try {
                 ExpoSpeechRecognitionModule.stop();
             } catch (error) {
@@ -423,7 +414,7 @@ export default function VoiceCommandListener({
 
     // Stop/start listening based on enabled prop
     useEffect(() => {
-        if (!enabled && isListening) {
+        if (isListening) {
             try {
                 ExpoSpeechRecognitionModule.stop();
             } catch (error) {
@@ -444,13 +435,12 @@ export default function VoiceCommandListener({
             {/* Always listening indicator with pulse animation */}
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <View
-                    className={`w-16 h-16 rounded-full items-center justify-center shadow-lg ${
-                        networkError ? 'bg-red-500' :
-                        isPausedForSpeech ? 'bg-gray-500' : 
-                        isWaitingForCommand ? 'bg-red-500' : 
-                        isListening && continuousMode ? 'bg-green-500' : 
-                        'bg-blue-500'
-                    }`}
+                    className={`w-16 h-16 rounded-full items-center justify-center shadow-lg ${networkError ? 'bg-red-500' :
+                            isPausedForSpeech ? 'bg-gray-500' :
+                                isWaitingForCommand ? 'bg-red-500' :
+                                    isListening && continuousMode ? 'bg-green-500' :
+                                        'bg-blue-500'
+                        }`}
                     accessibilityLabel={networkError ? "Network error" : continuousMode ? "Always listening - ready for voice commands" : "Voice recognition active"}
                     accessibilityHint={networkError ? "Check internet connection" : continuousMode ? "Speak your command anytime" : "Voice commands active"}
                 >

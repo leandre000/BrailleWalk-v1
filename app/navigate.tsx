@@ -249,6 +249,7 @@ export default function NavigateScreen() {
   };
 
   const handleVoiceCommand = (command: string, confidence?: number) => {
+    console.log(command,"in navigate")
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, NAVIGATION_COMMANDS, 0.6);
     
@@ -359,7 +360,7 @@ export default function NavigateScreen() {
         {/* Voice Command Listener */}
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
-          enabled={navState !== 'arrived'}
+          enabled={true}
           continuousMode={true}
           showVisualFeedback={true}
         />

@@ -247,7 +247,7 @@ export default function AuthScreen() {
         {/* Voice Command Listener */}
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
-          enabled={authState === 'idle' || authState === 'failed'}
+          enabled={true}
           continuousMode={true}
           showVisualFeedback={true}
         />
