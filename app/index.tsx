@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 
 type AuthState = 'idle' | 'authenticating' | 'success' | 'failed';
 type AuthMethod = 'voice' | 'face' | 'both';
@@ -175,6 +176,20 @@ export default function AuthScreen() {
     }
   };
 
+  const handleVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // Login/Sign in commands
+    if (lowerCommand.includes('login') || lowerCommand.includes('sign in') || lowerCommand.includes('authenticate') || lowerCommand.includes('start')) {
+      Speech.speak('Starting authentication', { rate: 1, language: 'en-US' });
+      handleAuthenticate();
+    }
+    // Unknown command
+    else {
+      Speech.speak('Say login or sign in to authenticate', { rate: 1, language: 'en-US' });
+    }
+  };
+
   return (
     <GradientBackground>
       <TouchableOpacity
@@ -215,6 +230,14 @@ export default function AuthScreen() {
             <Waveform isActive={authState === 'authenticating'} />
           </View>
         </View>
+
+        {/* Voice Command Listener */}
+        <VoiceCommandListener
+          onCommand={handleVoiceCommand}
+          enabled={authState === 'idle' || authState === 'failed'}
+          wakeWord="hey"
+          showVisualFeedback={true}
+        />
       </TouchableOpacity>
     </GradientBackground>
   );

@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 
 // Screen responsible for navigation
 
@@ -246,6 +247,38 @@ export default function NavigateScreen() {
     }
   };
 
+  const handleVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // Pause commands
+    if (lowerCommand.includes('pause') || lowerCommand.includes('stop')) {
+      if (!isPaused) {
+        Speech.speak('Pausing navigation', { rate: 1, language: 'en-US' });
+        handlePauseResume();
+      }
+    }
+    // Resume commands
+    else if (lowerCommand.includes('resume') || lowerCommand.includes('continue') || lowerCommand.includes('start')) {
+      if (isPaused) {
+        Speech.speak('Resuming navigation', { rate: 1, language: 'en-US' });
+        handlePauseResume();
+      }
+    }
+    // Repeat commands
+    else if (lowerCommand.includes('repeat') || lowerCommand.includes('again') || lowerCommand.includes('what')) {
+      handleRepeatInstruction();
+    }
+    // Exit commands
+    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
+      Speech.speak('Exiting navigation', { rate: 1, language: 'en-US' });
+      handleQuit();
+    }
+    // Unknown command
+    else {
+      Speech.speak('Say pause, resume, repeat, or exit', { rate: 1, language: 'en-US' });
+    }
+  };
+
   return (
     <GradientBackground>
       <View 
@@ -310,6 +343,14 @@ export default function NavigateScreen() {
             <Text className="text-base text-white font-semibold">Exit Navigation</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Voice Command Listener */}
+        <VoiceCommandListener
+          onCommand={handleVoiceCommand}
+          enabled={navState !== 'arrived'}
+          wakeWord="hey"
+          showVisualFeedback={true}
+        />
       </View>
     </GradientBackground>
   );

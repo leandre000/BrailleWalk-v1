@@ -32,6 +32,7 @@
     "expo-router": "~6.0.12",
     "expo-secure-store": "~15.0.7",
     "expo-speech": "~14.0.7",
+    "expo-speech-recognition": "^2.1.5",
     "expo-splash-screen": "^31.0.10",
     "expo-status-bar": "~3.0.8",
     "nativewind": "^4.2.1",

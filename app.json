@@ -81,7 +81,8 @@
         {
           "microphonePermission": "BrailleWalk uses the microphone for voice commands and authentication features."
         }
-      ]
+      ],
+      "expo-speech-recognition"
     ],
     "experiments": {
       "typedRoutes": true

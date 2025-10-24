@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 
 interface DashboardFeature {
   id: string;
@@ -125,6 +126,43 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // Navigate commands
+    if (lowerCommand.includes('navigate') || lowerCommand.includes('navigation')) {
+      const navFeature = features.find(f => f.id === 'navigate');
+      if (navFeature) {
+        Speech.speak('Opening navigation mode', { rate: 1, language: 'en-US' });
+        handleFeaturePress(navFeature);
+      }
+    }
+    // Scan commands
+    else if (lowerCommand.includes('scan') || lowerCommand.includes('camera') || lowerCommand.includes('object')) {
+      const scanFeature = features.find(f => f.id === 'scan');
+      if (scanFeature) {
+        Speech.speak('Opening scan mode', { rate: 1, language: 'en-US' });
+        handleFeaturePress(scanFeature);
+      }
+    }
+    // Emergency commands
+    else if (lowerCommand.includes('emergency') || lowerCommand.includes('help') || lowerCommand.includes('call')) {
+      const emergencyFeature = features.find(f => f.id === 'emergency');
+      if (emergencyFeature) {
+        Speech.speak('Opening emergency contacts', { rate: 1, language: 'en-US' });
+        handleFeaturePress(emergencyFeature);
+      }
+    }
+    // Repeat instructions
+    else if (lowerCommand.includes('repeat') || lowerCommand.includes('instructions') || lowerCommand.includes('help')) {
+      handleRepeatInstructions();
+    }
+    // Unknown command
+    else {
+      Speech.speak('Command not recognized. Say navigate, scan, or emergency.', { rate: 1, language: 'en-US' });
+    }
+  };
+
   return (
     <GradientBackground>
       <View 
@@ -179,6 +217,14 @@ export default function DashboardScreen() {
             {selectedFeature ? 'Loading feature...' : 'Tap any feature above to get started'}
           </Text>
         </View>
+
+        {/* Voice Command Listener */}
+        <VoiceCommandListener
+          onCommand={handleVoiceCommand}
+          enabled={true}
+          wakeWord="hey"
+          showVisualFeedback={true}
+        />
       </View>
     </GradientBackground>
   );
