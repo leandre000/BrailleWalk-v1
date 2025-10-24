@@ -203,20 +203,14 @@ export default function EmergencyScreen() {
       setEmergencyState('message-sent');
       if (Platform.OS !== 'web') {
         try {
-          speechManager.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, {
-            rate: 1,
-            language: 'en-US',
-            onDone: () => {
+          speechManager.speak(
+            `Emergency message sent to ${contact.name}. Now initiating call.`,
+            { rate: 1, language: 'en-US' },
+            () => {
               // Initiate call immediately after speech finishes
               initiateCall(contact);
-            },
-            onError: () => {
-              // If speech fails, initiate call after 1 second
-              setTimeout(() => {
-                initiateCall(contact);
-              }, 1000);
             }
-          });
+          );
         } catch (error) {
           console.log('Speech not available:', error);
           // If speech module not available, initiate call after 1 second
@@ -238,10 +232,10 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
-        speechManager.speak(`Calling ${contact.name}...`, {
-          rate: 1,
-          language: 'en-US',
-          onDone: () => {
+        speechManager.speak(
+          `Calling ${contact.name}...`,
+          { rate: 1, language: 'en-US' },
+          () => {
             // Connect call immediately after speech finishes
             setEmergencyState('in-call');
             if (Platform.OS !== 'web') {
@@ -255,27 +249,8 @@ export default function EmergencyScreen() {
             callTimerRef.current = setInterval(() => {
               setCallDuration(prev => prev + 1);
             }, 1000) as ReturnType<typeof setInterval>;
-
-          },
-          onError: () => {
-            // If speech fails, connect after 2 seconds
-            setTimeout(() => {
-              setEmergencyState('in-call');
-              if (Platform.OS !== 'web') {
-                try {
-                  speechManager.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
-                } catch (error) {
-                  console.log('Speech not available:', error);
-                }
-              }
-              setCallDuration(0);
-              callTimerRef.current = setInterval(() => {
-                setCallDuration(prev => prev + 1);
-              }, 1000) as ReturnType<typeof setInterval>;
-
-            }, 2000);
           }
-        });
+        );
       } catch (error) {
         console.log('Native modules not available:', error);
         // If speech module not available, connect after 2 seconds
@@ -306,18 +281,14 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-        speechManager.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, {
-          rate: 1,
-          language: 'en-US',
-          onDone: () => {
+        speechManager.speak(
+          `Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`,
+          { rate: 1, language: 'en-US' },
+          () => {
             // Go back immediately after speech finishes
             router.back();
-          },
-          onError: () => {
-            // If speech fails, go back after 2 seconds
-            setTimeout(() => router.back(), 2000);
           }
-        });
+        );
       } catch (error) {
         console.log('Native modules not available:', error);
         // If speech module not available, go back after 2 seconds

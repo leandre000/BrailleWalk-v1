@@ -89,20 +89,14 @@ export default function AuthScreen() {
 
         if (Platform.OS !== 'web') {
           try {
-            speechManager.speak(successMessage, { 
-              rate: speechRate, 
-              language: 'en-US',
-              onDone: () => {
+            speechManager.speak(
+              successMessage, 
+              { rate: speechRate, language: 'en-US' },
+              () => {
                 // Route immediately after speech finishes
                 router.replace('/dashboard');
-              },
-              onError: () => {
-                // If speech fails, route after 2 seconds
-                setTimeout(() => {
-                  router.replace('/dashboard');
-                }, 2000);
               }
-            });
+            );
           } catch (error) {
             console.log('Speech not available:', error);
             // If speech module not available, route after 2 seconds

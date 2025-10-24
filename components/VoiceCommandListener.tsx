@@ -441,10 +441,9 @@ export default function VoiceCommandListener({
 
     return (
         <View className="absolute bottom-8 right-8 items-center">
-            {/* Always listening button with pulse animation */}
+            {/* Always listening indicator with pulse animation */}
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                <Pressable
-                    onPress={handleTapToSpeak}
+                <View
                     className={`w-16 h-16 rounded-full items-center justify-center shadow-lg ${
                         networkError ? 'bg-red-500' :
                         isPausedForSpeech ? 'bg-gray-500' : 
@@ -452,22 +451,22 @@ export default function VoiceCommandListener({
                         isListening && continuousMode ? 'bg-green-500' : 
                         'bg-blue-500'
                     }`}
-                    accessibilityLabel={networkError ? "Network error" : continuousMode ? "Always listening" : "Tap to give voice command"}
-                    accessibilityHint={networkError ? "Check internet connection" : continuousMode ? "Voice commands active" : "Tap and speak your command"}
+                    accessibilityLabel={networkError ? "Network error" : continuousMode ? "Always listening - ready for voice commands" : "Voice recognition active"}
+                    accessibilityHint={networkError ? "Check internet connection" : continuousMode ? "Speak your command anytime" : "Voice commands active"}
                 >
                     <MaterialIcons
                         name={networkError ? 'signal-wifi-off' : isPausedForSpeech ? 'mic-off' : isWaitingForCommand ? 'mic' : 'mic'}
                         size={32}
                         color="white"
                     />
-                </Pressable>
+                </View>
             </Animated.View>
 
             {/* Status indicator */}
             {continuousMode && isListening && !isPausedForSpeech && !isWaitingForCommand && !networkError && (
                 <View className="mt-2 px-3 py-1 bg-green-500/80 rounded-full">
                     <Text className="text-white text-xs font-semibold">
-                        Always Listening
+                        Ready - Just Speak
                     </Text>
                 </View>
             )}
