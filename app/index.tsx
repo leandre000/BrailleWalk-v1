@@ -10,6 +10,7 @@ import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
 import { matchCommand, getSuggestions, GLOBAL_COMMANDS } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 type AuthState = 'idle' | 'authenticating' | 'success' | 'failed';
 type AuthMethod = 'voice' | 'face' | 'both';
@@ -26,7 +27,7 @@ export default function AuthScreen() {
     const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: speechRate });
+        speechManager.speak(welcomeMessage, { rate: speechRate });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -65,7 +66,7 @@ export default function AuthScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(authMessage, { rate: speechRate, language: 'en-US' });
+        speechManager.speak(authMessage, { rate: speechRate, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -88,7 +89,7 @@ export default function AuthScreen() {
 
         if (Platform.OS !== 'web') {
           try {
-            Speech.speak(successMessage, { 
+            speechManager.speak(successMessage, { 
               rate: speechRate, 
               language: 'en-US',
               onDone: () => {
@@ -125,7 +126,7 @@ export default function AuthScreen() {
         const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
         if (Platform.OS !== 'web') {
           try {
-            Speech.speak(failMessage, { rate: speechRate, language: 'en-US' });
+            speechManager.speak(failMessage, { rate: speechRate, language: 'en-US' });
           } catch (error) {
             console.log('Speech not available:', error);
           }
@@ -201,7 +202,7 @@ export default function AuthScreen() {
       }
       
       if (Platform.OS !== 'web') {
-        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
       
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
@@ -253,7 +254,7 @@ export default function AuthScreen() {
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
           enabled={authState === 'idle' || authState === 'failed'}
-          wakeWord="hey"
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </TouchableOpacity>

@@ -11,6 +11,7 @@ import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
 import { matchCommand, getSuggestions, NAVIGATION_COMMANDS } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 // Screen responsible for navigation
 
@@ -75,7 +76,7 @@ export default function NavigateScreen() {
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            Speech.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
+            speechManager.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Native modules not available:', error);
           }
@@ -86,7 +87,7 @@ export default function NavigateScreen() {
       
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation mode activated with limited location features.', { rate: 0.7 });
+          speechManager.speak('Navigation mode activated with limited location features.', { rate: 1 });
         } catch (err) {
           console.log('Speech not available:', err);
         }
@@ -127,19 +128,13 @@ export default function NavigateScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           }
           
-          Speech.speak(currentInstruction.text, { 
+          speechManager.speak(currentInstruction.text, { 
             rate: 1, 
-            language: 'en-US',
-            onDone: () => {
-              // Wait 1 second after speech finishes, then next instruction
-              instructionIndex++;
-              speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
-            },
-            onError: () => {
-              // If speech fails, proceed after 2 seconds
-              instructionIndex++;
-              speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
-            }
+            language: 'en-US'
+          }, () => {
+            // Wait 1 second after speech finishes, then next instruction
+            instructionIndex++;
+            speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
           });
         } catch (error) {
           console.log('Native modules not available:', error);
@@ -161,10 +156,14 @@ export default function NavigateScreen() {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
     }
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+    }
+    speechManager.stop();
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        Speech.speak('Exiting navigation mode', { rate: 1 });
+        speechManager.speak('Exiting navigation mode', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -185,16 +184,17 @@ export default function NavigateScreen() {
     if (isPaused) {
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation resumed', { rate: 1 });
+          speechManager.speak('Navigation resumed', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
       }
       startNavigationSequence();
     } else {
+      speechManager.stop();
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak('Navigation paused', { rate: 1 });
+          speechManager.speak('Navigation paused', { rate: 1 });
         } catch (error) {
           console.log('Speech not available:', error);
         }
@@ -209,7 +209,7 @@ export default function NavigateScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        Speech.speak(instruction, { rate: 1, language: 'en-US' });
+        speechManager.speak(instruction, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -284,7 +284,7 @@ export default function NavigateScreen() {
       }
       
       if (Platform.OS !== 'web') {
-        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
       
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
@@ -360,7 +360,7 @@ export default function NavigateScreen() {
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
           enabled={navState !== 'arrived'}
-          wakeWord="hey"
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </View>

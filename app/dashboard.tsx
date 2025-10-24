@@ -10,6 +10,7 @@ import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
 import { matchCommand, getSuggestions, GLOBAL_COMMANDS } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 interface DashboardFeature {
   id: string;
@@ -58,7 +59,7 @@ export default function DashboardScreen() {
       'Welcome to BrailleWalk dashboard. You have three main features available: Navigate for walking guidance, Scan Object for reading text and identifying objects, and I need help for emergency contacts. Tap any feature to get started.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: 1 });
+        speechManager.speak(welcomeMessage, { rate: 1 });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -82,19 +83,12 @@ export default function DashboardScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(featureMessage, { 
+        speechManager.speak(featureMessage, { 
           rate: 1, 
-          language: 'en-US',
-          onDone: () => {
-            // Route immediately after speech finishes
-            router.push(feature.route as any);
-          },
-          onError: () => {
-            // If speech fails, route after 2 seconds
-            setTimeout(() => {
-              router.push(feature.route as any);
-            }, 2000);
-          }
+          language: 'en-US'
+        }, () => {
+          // Route immediately after speech finishes
+          router.push(feature.route as any);
         });
       } catch (error) {
         console.log('Speech not available:', error);
@@ -120,7 +114,7 @@ export default function DashboardScreen() {
     
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(instructionsMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(instructionsMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -172,7 +166,7 @@ export default function DashboardScreen() {
       }
       
       if (Platform.OS !== 'web') {
-        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
       
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
@@ -238,7 +232,7 @@ export default function DashboardScreen() {
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
           enabled={true}
-          wakeWord="hey"
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </View>

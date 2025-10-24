@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import GradientBackground from '@/components/GradientBackground';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
 import { matchCommand, getSuggestions, EMERGENCY_COMMANDS, matchContactName, parseComplexCommand } from '@/utils/commandMatcher';
+import { speechManager } from '@/utils/speechManager';
 
 type EmergencyState = 'selecting' | 'sending-location' | 'calling' | 'in-call' | 'ended' | 'message-sent';
 type EmergencyType = 'medical' | 'navigation' | 'general' | 'urgent';
@@ -88,7 +89,7 @@ export default function EmergencyScreen() {
     const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(welcomeMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(welcomeMessage, { rate: 1, language: 'en-US' });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
         Vibration.vibrate([0, 200, 100, 200, 100, 200]);
       } catch (error) {
@@ -162,7 +163,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        Speech.speak(`Selected ${contact.name}, ${contact.relationship}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Selected ${contact.name}, ${contact.relationship}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -186,7 +187,7 @@ export default function EmergencyScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        Speech.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -202,7 +203,7 @@ export default function EmergencyScreen() {
       setEmergencyState('message-sent');
       if (Platform.OS !== 'web') {
         try {
-          Speech.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, {
+          speechManager.speak(`Emergency message sent to ${contact.name}. Now initiating call.`, {
             rate: 1,
             language: 'en-US',
             onDone: () => {
@@ -237,7 +238,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
-        Speech.speak(`Calling ${contact.name}...`, {
+        speechManager.speak(`Calling ${contact.name}...`, {
           rate: 1,
           language: 'en-US',
           onDone: () => {
@@ -245,7 +246,7 @@ export default function EmergencyScreen() {
             setEmergencyState('in-call');
             if (Platform.OS !== 'web') {
               try {
-                Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+                speechManager.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
               } catch (error) {
                 console.log('Speech not available:', error);
               }
@@ -262,7 +263,7 @@ export default function EmergencyScreen() {
               setEmergencyState('in-call');
               if (Platform.OS !== 'web') {
                 try {
-                  Speech.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+                  speechManager.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
                 } catch (error) {
                   console.log('Speech not available:', error);
                 }
@@ -305,7 +306,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-        Speech.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, {
+        speechManager.speak(`Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`, {
           rate: 1,
           language: 'en-US',
           onDone: () => {
@@ -334,7 +335,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        Speech.speak('Exiting emergency mode', { rate: 1 });
+        speechManager.speak('Exiting emergency mode', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -347,7 +348,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-        Speech.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Emergency type: ${type}. ${emergencyMessages[type]}`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -390,7 +391,7 @@ export default function EmergencyScreen() {
         const suggestions = contactNames.slice(0, 2);
         const errorMessage = `I couldn't find that contact. Available contacts are: ${suggestions.join(', and ')}.`;
         if (Platform.OS !== 'web') {
-          Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+          speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
         }
         console.log(`Contact not found: "${parsed.parameter}". Available: ${contactNames.join(', ')}`);
       }
@@ -418,7 +419,7 @@ export default function EmergencyScreen() {
       }
       
       if (Platform.OS !== 'web') {
-        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+        speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
       
       console.log(`Command not recognized: "${command}" in state: ${emergencyState}`);
@@ -578,7 +579,7 @@ export default function EmergencyScreen() {
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
           enabled={emergencyState !== 'sending-location' && emergencyState !== 'message-sent' && emergencyState !== 'calling' && emergencyState !== 'ended'}
-          wakeWord="hey"
+          continuousMode={true}
           showVisualFeedback={true}
         />
       </View>
