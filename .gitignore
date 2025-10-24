@@ -176,3 +176,5 @@ expo-env.d.ts
 .expo
 .vscode
 node_modules
+android
+ios

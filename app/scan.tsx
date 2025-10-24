@@ -11,6 +11,7 @@ import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import ScanningLine from '@/components/ScanningLine';
 import ScannerFrame from '@/components/ScannerFrame';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result';
 type ScanMode = 'auto' | 'text' | 'object' | 'barcode';
@@ -294,6 +295,38 @@ export default function ScanScreen() {
     router.back();
   };
 
+  const handleVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // Scan/Capture commands
+    if (lowerCommand.includes('scan') || lowerCommand.includes('capture') || lowerCommand.includes('take')) {
+      Speech.speak('Scanning', { rate: 1, language: 'en-US' });
+      handleScan();
+    }
+    // Mode change commands
+    else if (lowerCommand.includes('text')) {
+      handleModeChange('text');
+    }
+    else if (lowerCommand.includes('object')) {
+      handleModeChange('object');
+    }
+    else if (lowerCommand.includes('barcode')) {
+      handleModeChange('barcode');
+    }
+    else if (lowerCommand.includes('auto')) {
+      handleModeChange('auto');
+    }
+    // Exit commands
+    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
+      Speech.speak('Exiting scan mode', { rate: 1, language: 'en-US' });
+      handleQuit();
+    }
+    // Unknown command
+    else {
+      Speech.speak('Say scan, text, object, auto, or exit', { rate: 1, language: 'en-US' });
+    }
+  };
+
 
   if (!permission) {
     return (
@@ -461,6 +494,14 @@ export default function ScanScreen() {
             <Text className="text-base text-white font-semibold">Exit Scanning</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Voice Command Listener */}
+        <VoiceCommandListener
+          onCommand={handleVoiceCommand}
+          enabled={true}
+          wakeWord="hey"
+          showVisualFeedback={true}
+        />
       </View>
     </GradientBackground>
   );
