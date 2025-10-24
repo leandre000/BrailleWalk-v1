@@ -9,9 +9,10 @@ import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
+import VoiceCommandListener from '@/components/VoiceCommandListener';
 import ScanningLine from '@/components/ScanningLine';
 import ScannerFrame from '@/components/ScannerFrame';
-import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, SCAN_COMMANDS } from '@/utils/commandMatcher';
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result';
 type ScanMode = 'auto' | 'text' | 'object' | 'barcode';
@@ -295,35 +296,55 @@ export default function ScanScreen() {
     router.back();
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Use fuzzy matching to find the best command match
+    const match = matchCommand(command, SCAN_COMMANDS, 0.6);
     
-    // Scan/Capture commands
-    if (lowerCommand.includes('scan') || lowerCommand.includes('capture') || lowerCommand.includes('take')) {
-      Speech.speak('Scanning', { rate: 1, language: 'en-US' });
-      handleScan();
-    }
-    // Mode change commands
-    else if (lowerCommand.includes('text')) {
-      handleModeChange('text');
-    }
-    else if (lowerCommand.includes('object')) {
-      handleModeChange('object');
-    }
-    else if (lowerCommand.includes('barcode')) {
-      handleModeChange('barcode');
-    }
-    else if (lowerCommand.includes('auto')) {
-      handleModeChange('auto');
-    }
-    // Exit commands
-    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
-      Speech.speak('Exiting scan mode', { rate: 1, language: 'en-US' });
-      handleQuit();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Say scan, text, object, auto, or exit', { rate: 1, language: 'en-US' });
+    if (match) {
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
+      
+      // Handle matched command
+      if (match.command === 'scan') {
+        handleScan();
+      }
+      else if (match.command === 'text') {
+        handleModeChange('text');
+      }
+      else if (match.command === 'object') {
+        handleModeChange('object');
+      }
+      else if (match.command === 'barcode') {
+        handleModeChange('barcode');
+      }
+      else if (match.command === 'auto') {
+        handleModeChange('auto');
+      }
+      else if (match.command === 'manual') {
+        // Toggle off auto mode
+        if (autoScan) {
+          setAutoScan(false);
+          Speech.speak('Manual mode', { rate: 1, language: 'en-US' });
+        }
+      }
+      else if (match.command === 'exit') {
+        handleQuit();
+      }
+    } else {
+      // Command not recognized - provide helpful suggestions
+      const suggestions = getSuggestions(command, SCAN_COMMANDS, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
+      } else {
+        errorMessage += "Try saying: scan, text mode, object mode, or exit.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 

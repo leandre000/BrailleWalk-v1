@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, GLOBAL_COMMANDS } from '@/utils/commandMatcher';
 
 interface DashboardFeature {
   id: string;
@@ -126,40 +127,55 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Use fuzzy matching to find the best command match
+    const match = matchCommand(command, GLOBAL_COMMANDS, 0.6);
     
-    // Navigate commands
-    if (lowerCommand.includes('navigate') || lowerCommand.includes('navigation')) {
-      const navFeature = features.find(f => f.id === 'navigate');
-      if (navFeature) {
-        Speech.speak('Opening navigation mode', { rate: 1, language: 'en-US' });
-        handleFeaturePress(navFeature);
+    if (match) {
+      // Log for debugging
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
+      
+      // Handle matched command
+      if (match.command === 'navigate') {
+        const navFeature = features.find(f => f.id === 'navigate');
+        if (navFeature) {
+          handleFeaturePress(navFeature);
+        }
       }
-    }
-    // Scan commands
-    else if (lowerCommand.includes('scan') || lowerCommand.includes('camera') || lowerCommand.includes('object')) {
-      const scanFeature = features.find(f => f.id === 'scan');
-      if (scanFeature) {
-        Speech.speak('Opening scan mode', { rate: 1, language: 'en-US' });
-        handleFeaturePress(scanFeature);
+      else if (match.command === 'scan') {
+        const scanFeature = features.find(f => f.id === 'scan');
+        if (scanFeature) {
+          handleFeaturePress(scanFeature);
+        }
       }
-    }
-    // Emergency commands
-    else if (lowerCommand.includes('emergency') || lowerCommand.includes('help') || lowerCommand.includes('call')) {
-      const emergencyFeature = features.find(f => f.id === 'emergency');
-      if (emergencyFeature) {
-        Speech.speak('Opening emergency contacts', { rate: 1, language: 'en-US' });
-        handleFeaturePress(emergencyFeature);
+      else if (match.command === 'emergency') {
+        const emergencyFeature = features.find(f => f.id === 'emergency');
+        if (emergencyFeature) {
+          handleFeaturePress(emergencyFeature);
+        }
       }
-    }
-    // Repeat instructions
-    else if (lowerCommand.includes('repeat') || lowerCommand.includes('instructions') || lowerCommand.includes('help')) {
-      handleRepeatInstructions();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Command not recognized. Say navigate, scan, or emergency.', { rate: 1, language: 'en-US' });
+      else if (match.command === 'repeat') {
+        handleRepeatInstructions();
+      }
+      else if (match.command === 'back') {
+        router.back();
+      }
+    } else {
+      // Command not recognized - provide helpful suggestions
+      const suggestions = getSuggestions(command, GLOBAL_COMMANDS, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
+      } else {
+        errorMessage += "Try saying: navigate, scan, or emergency.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 

@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, GLOBAL_COMMANDS } from '@/utils/commandMatcher';
 
 type AuthState = 'idle' | 'authenticating' | 'success' | 'failed';
 type AuthMethod = 'voice' | 'face' | 'both';
@@ -176,17 +177,34 @@ export default function AuthScreen() {
     }
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Define authentication-specific commands
+    const authCommands = [
+      { command: 'login', aliases: ['login', 'sign in', 'authenticate', 'start', 'begin', 'enter', 'go'], description: 'Start authentication' }
+    ];
     
-    // Login/Sign in commands
-    if (lowerCommand.includes('login') || lowerCommand.includes('sign in') || lowerCommand.includes('authenticate') || lowerCommand.includes('start')) {
-      Speech.speak('Starting authentication', { rate: 1, language: 'en-US' });
+    // Use fuzzy matching
+    const match = matchCommand(command, authCommands, 0.6);
+    
+    if (match) {
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence})`);
       handleAuthenticate();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Say login or sign in to authenticate', { rate: 1, language: 'en-US' });
+    } else {
+      // Command not recognized - provide suggestions
+      const suggestions = getSuggestions(command, authCommands, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Try saying: ${suggestions.slice(0, 2).join(', or ')}.`;
+      } else {
+        errorMessage += "Say 'login' or 'sign in' to authenticate.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 

@@ -9,10 +9,11 @@ import {
 } from 'expo-speech-recognition';
 
 interface VoiceCommandListenerProps {
-    onCommand: (command: string) => void;
+    onCommand: (command: string, confidence?: number) => void;
     enabled?: boolean;
     wakeWord?: string;
     showVisualFeedback?: boolean;
+    confirmBeforeExecute?: boolean;
 }
 
 export default function VoiceCommandListener({
@@ -20,11 +21,13 @@ export default function VoiceCommandListener({
     enabled = true,
     wakeWord = 'hey',
     showVisualFeedback = true,
+    confirmBeforeExecute = true,
 }: VoiceCommandListenerProps) {
     const [isListening, setIsListening] = useState(false);
     const [isWaitingForCommand, setIsWaitingForCommand] = useState(false);
     const [recognizedText, setRecognizedText] = useState('');
     const [permissionGranted, setPermissionGranted] = useState(false);
+    const [confidence, setConfidence] = useState<number>(0);
     const wakeWordDetectedRef = useRef(false);
 
     // Request permissions on mount
@@ -130,15 +133,43 @@ export default function VoiceCommandListener({
     });
 
     // Process voice command
-    const processCommand = (text: string) => {
+    const processCommand = (text: string, confidenceScore: number = 1.0) => {
         const cleanText = text.trim().toLowerCase();
 
         // Remove wake word if still present
         const commandText = cleanText.replace(wakeWord.toLowerCase(), '').trim();
 
         if (commandText) {
+            setConfidence(confidenceScore);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onCommand(commandText);
+            
+            // Provide voice confirmation if enabled
+            if (confirmBeforeExecute) {
+                const confidencePercent = Math.round(confidenceScore * 100);
+                let confirmationMessage = '';
+                
+                if (confidenceScore >= 0.9) {
+                    confirmationMessage = `Got it, ${commandText}`;
+                } else if (confidenceScore >= 0.7) {
+                    confirmationMessage = `I heard ${commandText}`;
+                } else {
+                    confirmationMessage = `I think you said ${commandText}`;
+                }
+                
+                Speech.speak(confirmationMessage, { 
+                    rate: 1.1, 
+                    language: 'en-US',
+                    onDone: () => {
+                        onCommand(commandText, confidenceScore);
+                    },
+                    onError: () => {
+                        // Execute anyway if speech fails
+                        onCommand(commandText, confidenceScore);
+                    }
+                });
+            } else {
+                onCommand(commandText, confidenceScore);
+            }
         }
     };
 
@@ -256,12 +287,17 @@ export default function VoiceCommandListener({
                 </View>
             )}
 
-            {/* Debug: Show recognized text */}
+            {/* Debug: Show recognized text with confidence */}
             {recognizedText && isWaitingForCommand && (
                 <View className="mt-2 px-3 py-1 bg-gray-800/80 rounded-lg max-w-xs">
                     <Text className="text-white text-xs">
                         {recognizedText}
                     </Text>
+                    {confidence > 0 && (
+                        <Text className="text-gray-400 text-xs mt-1">
+                            {Math.round(confidence * 100)}% confident
+                        </Text>
+                    )}
                 </View>
             )}
         </View>

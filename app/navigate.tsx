@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, NAVIGATION_COMMANDS } from '@/utils/commandMatcher';
 
 // Screen responsible for navigation
 
@@ -247,35 +248,46 @@ export default function NavigateScreen() {
     }
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Use fuzzy matching to find the best command match
+    const match = matchCommand(command, NAVIGATION_COMMANDS, 0.6);
     
-    // Pause commands
-    if (lowerCommand.includes('pause') || lowerCommand.includes('stop')) {
-      if (!isPaused) {
-        Speech.speak('Pausing navigation', { rate: 1, language: 'en-US' });
-        handlePauseResume();
+    if (match) {
+      console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
+      
+      // Handle matched command
+      if (match.command === 'pause') {
+        if (!isPaused) {
+          handlePauseResume();
+        }
       }
-    }
-    // Resume commands
-    else if (lowerCommand.includes('resume') || lowerCommand.includes('continue') || lowerCommand.includes('start')) {
-      if (isPaused) {
-        Speech.speak('Resuming navigation', { rate: 1, language: 'en-US' });
-        handlePauseResume();
+      else if (match.command === 'resume') {
+        if (isPaused) {
+          handlePauseResume();
+        }
       }
-    }
-    // Repeat commands
-    else if (lowerCommand.includes('repeat') || lowerCommand.includes('again') || lowerCommand.includes('what')) {
-      handleRepeatInstruction();
-    }
-    // Exit commands
-    else if (lowerCommand.includes('exit') || lowerCommand.includes('quit') || lowerCommand.includes('back') || lowerCommand.includes('leave')) {
-      Speech.speak('Exiting navigation', { rate: 1, language: 'en-US' });
-      handleQuit();
-    }
-    // Unknown command
-    else {
-      Speech.speak('Say pause, resume, repeat, or exit', { rate: 1, language: 'en-US' });
+      else if (match.command === 'repeat') {
+        handleRepeatInstruction();
+      }
+      else if (match.command === 'exit') {
+        handleQuit();
+      }
+    } else {
+      // Command not recognized - provide helpful suggestions
+      const suggestions = getSuggestions(command, NAVIGATION_COMMANDS, 3);
+      
+      let errorMessage = "I didn't understand that. ";
+      if (suggestions.length > 0) {
+        errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
+      } else {
+        errorMessage += "Try saying: pause, resume, repeat, or exit.";
+      }
+      
+      if (Platform.OS !== 'web') {
+        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 

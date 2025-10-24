@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 
 import GradientBackground from '@/components/GradientBackground';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
+import { matchCommand, getSuggestions, EMERGENCY_COMMANDS, matchContactName, parseComplexCommand } from '@/utils/commandMatcher';
 
 type EmergencyState = 'selecting' | 'sending-location' | 'calling' | 'in-call' | 'ended' | 'message-sent';
 type EmergencyType = 'medical' | 'navigation' | 'general' | 'urgent';
@@ -359,49 +360,68 @@ export default function EmergencyScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Parse complex commands (e.g., "call John")
+    const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
     
-    // Call specific contact by name
-    if (lowerCommand.includes('call')) {
-      // Extract name from command
-      const names = sortedContacts.map(c => c.name.toLowerCase());
-      const matchedContact = sortedContacts.find(c => 
-        lowerCommand.includes(c.name.toLowerCase()) ||
-        lowerCommand.includes(c.name.split(' ')[0].toLowerCase())
-      );
-      
-      if (matchedContact && emergencyState === 'selecting') {
-        Speech.speak(`Calling ${matchedContact.name}`, { rate: 1, language: 'en-US' });
-        handleSelectContact(matchedContact);
-      } else if (lowerCommand.includes('first') || lowerCommand.includes('nearest')) {
-        // Call first/nearest contact
-        if (sortedContacts.length > 0 && emergencyState === 'selecting') {
-          Speech.speak(`Calling ${sortedContacts[0].name}`, { rate: 1, language: 'en-US' });
-          handleSelectContact(sortedContacts[0]);
-        }
-      } else if (emergencyState === 'selecting') {
-        Speech.speak('Say call followed by a contact name', { rate: 1, language: 'en-US' });
+    // Check for call first/nearest command
+    const match = matchCommand(command, EMERGENCY_COMMANDS, 0.6);
+    
+    if (match && match.command === 'call_first' && emergencyState === 'selecting') {
+      // Call first/nearest contact
+      if (sortedContacts.length > 0) {
+        console.log(`Calling first contact: ${sortedContacts[0].name}`);
+        handleSelectContact(sortedContacts[0]);
       }
     }
-    // End call
-    else if ((lowerCommand.includes('end') || lowerCommand.includes('hang up') || lowerCommand.includes('stop')) && emergencyState === 'in-call') {
-      Speech.speak('Ending call', { rate: 1, language: 'en-US' });
+    else if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
+      // Try to match contact name with fuzzy matching
+      const contactNames = sortedContacts.map(c => c.name);
+      const nameMatch = matchContactName(parsed.parameter, contactNames, 0.6);
+      
+      if (nameMatch.name) {
+        const matchedContact = sortedContacts.find(c => c.name === nameMatch.name);
+        if (matchedContact) {
+          console.log(`Matched contact: ${matchedContact.name} (confidence: ${nameMatch.confidence})`);
+          handleSelectContact(matchedContact);
+        }
+      } else {
+        // No match found - provide suggestions
+        const suggestions = contactNames.slice(0, 2);
+        const errorMessage = `I couldn't find that contact. Available contacts are: ${suggestions.join(', and ')}.`;
+        if (Platform.OS !== 'web') {
+          Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+        }
+        console.log(`Contact not found: "${parsed.parameter}". Available: ${contactNames.join(', ')}`);
+      }
+    }
+    else if (match && match.command === 'end_call' && emergencyState === 'in-call') {
       handleEndCall();
     }
-    // Go back/Exit
-    else if ((lowerCommand.includes('back') || lowerCommand.includes('exit') || lowerCommand.includes('leave')) && 
+    else if (match && match.command === 'back' && 
              emergencyState !== 'in-call' && emergencyState !== 'calling' && emergencyState !== 'sending-location') {
-      Speech.speak('Going back', { rate: 1, language: 'en-US' });
       handleQuit();
     }
-    // Unknown command
     else {
+      // Command not recognized - provide context-aware help
+      let errorMessage = "I didn't understand that. ";
+      
       if (emergencyState === 'selecting') {
-        Speech.speak('Say call followed by a contact name, or say back to exit', { rate: 1, language: 'en-US' });
+        const suggestions = getSuggestions(command, EMERGENCY_COMMANDS, 3);
+        if (suggestions.length > 0) {
+          errorMessage += `Try saying: ${suggestions.slice(0, 2).join(', or ')}.`;
+        } else {
+          errorMessage += "Say 'call' followed by a contact name, or 'call first' for nearest contact.";
+        }
       } else if (emergencyState === 'in-call') {
-        Speech.speak('Say end call to hang up', { rate: 1, language: 'en-US' });
+        errorMessage = "Say 'end call' to hang up.";
       }
+      
+      if (Platform.OS !== 'web') {
+        Speech.speak(errorMessage, { rate: 1, language: 'en-US' });
+      }
+      
+      console.log(`Command not recognized: "${command}" in state: ${emergencyState}`);
     }
   };
 
