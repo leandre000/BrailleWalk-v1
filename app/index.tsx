@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Alert, Vibration, Platform } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
@@ -20,14 +19,13 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [authState, setAuthState] = useState<AuthState>('idle');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('both');
-  const [speechRate] = useState<number>(1);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const welcomeMessage = 'Welcome to BrailleWalk. Tap to authenticate.';
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(welcomeMessage, { rate: speechRate });
+        speechManager.speak(welcomeMessage, { rate: 1 });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -35,17 +33,14 @@ export default function AuthScreen() {
     }
 
     return () => {
+      // Clear timer and reset state when leaving
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
       }
-      
-      if (Platform.OS !== 'web') {
-        try {
-          Speech.stop();
-        } catch (error) {
-          console.log('Speech stop failed:', error);
-        }
-      }
+      setAuthState('idle');
+      setAuthMethod('both');
+      speechManager.stop();
     };
   }, []);
 
@@ -66,7 +61,7 @@ export default function AuthScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(authMessage, { rate: speechRate, language: 'en-US' });
+        speechManager.speak(authMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -87,7 +82,7 @@ export default function AuthScreen() {
           try {
             speechManager.speak(
               successMessage, 
-              { rate: speechRate, language: 'en-US' },
+              { rate: 1, language: 'en-US' },
               () => {
                 // Route immediately after speech finishes
                 router.replace('/dashboard');
@@ -116,7 +111,7 @@ export default function AuthScreen() {
         const failMessage = 'Authentication failed. Try again.';
         if (Platform.OS !== 'web') {
           try {
-            speechManager.speak(failMessage, { rate: speechRate, language: 'en-US' });
+            speechManager.speak(failMessage, { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Speech not available:', error);
           }

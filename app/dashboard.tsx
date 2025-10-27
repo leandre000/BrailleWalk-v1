@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
@@ -64,6 +63,13 @@ export default function DashboardScreen() {
         console.log('Speech/Haptics not available:', error);
       }
     }
+
+    return () => {
+      // Reset state when leaving dashboard
+      setSelectedFeature(null);
+      // Stop any ongoing speech
+      speechManager.stop();
+    };
   }, []);
 
   const handleFeaturePress = (feature: DashboardFeature) => {

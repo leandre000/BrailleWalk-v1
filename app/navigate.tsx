@@ -39,6 +39,7 @@ export default function NavigateScreen() {
   const [obstacleType, setObstacleType] = useState<ObstacleType>(null);
   const [distanceToDestination, setDistanceToDestination] = useState<number>(0);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigationSequenceRef = useRef<boolean>(false);
 
   const navigationInstructions: NavigationInstruction[] = [
     { id: '1', text: 'Navigation system activated. Starting route to destination.', type: 'navigating', priority: 'medium' },
@@ -56,12 +57,24 @@ export default function NavigateScreen() {
     startNavigationSequence();
     
     return () => {
+      // Stop navigation sequence
+      navigationSequenceRef.current = false;
+      // Clear all timers
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
       }
+      // Stop speech
+      speechManager.stop();
       if (Platform.OS !== 'web') {
         try { Speech.stop(); } catch {}
       }
+      // Reset states
+      setNavState('waiting');
+      setInstruction('Initializing navigation system...');
+      setDirection(null);
+      setIsPaused(false);
+      setObstacleType(null);
     };
   }, []);
 
@@ -96,10 +109,11 @@ export default function NavigateScreen() {
   };
 
   const startNavigationSequence = () => {
+    navigationSequenceRef.current = true;
     let instructionIndex = 0;
     
     const processInstruction = () => {
-      if (instructionIndex >= navigationInstructions.length) return;
+      if (instructionIndex >= navigationInstructions.length || !navigationSequenceRef.current) return;
       
       const currentInstruction = navigationInstructions[instructionIndex];
       setNavState(currentInstruction.type);
@@ -153,11 +167,12 @@ export default function NavigateScreen() {
   };
 
   const handleQuit = () => {
+    // Stop navigation sequence
+    navigationSequenceRef.current = false;
+    // Clear timer (only once)
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
-    }
-    if (speechTimeoutRef.current) {
-      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
     }
     speechManager.stop();
     if (Platform.OS !== 'web') {
@@ -249,7 +264,7 @@ export default function NavigateScreen() {
   };
 
   const handleVoiceCommand = (command: string, confidence?: number) => {
-    console.log(command,"in navigate")
+    console.log(`Voice command: "${command}" (confidence: ${confidence || 'unknown'})`);
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, NAVIGATION_COMMANDS, 0.6);
     

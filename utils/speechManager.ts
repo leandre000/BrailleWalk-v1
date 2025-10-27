@@ -38,6 +38,15 @@ class SpeechManager {
   }
 
   /**
+   * Remove all callbacks for a specific component
+   */
+  removeAllCallbacks(componentCallbacks: SpeechCallback[]) {
+    componentCallbacks.forEach(callback => {
+      this.removeCallback(callback);
+    });
+  }
+
+  /**
    * Check if app is currently speaking
    */
   getIsSpeaking(): boolean {
@@ -147,6 +156,24 @@ class SpeechManager {
   clearCallbacks() {
     this.onSpeechStartCallbacks = [];
     this.onSpeechEndCallbacks = [];
+  }
+
+  /**
+   * Clear all callbacks - use with caution as this affects all components
+   */
+  clearAllCallbacks() {
+    this.onSpeechStartCallbacks = [];
+    this.onSpeechEndCallbacks = [];
+  }
+
+  /**
+   * Get callback counts for debugging
+   */
+  getCallbackCounts() {
+    return {
+      startCallbacks: this.onSpeechStartCallbacks.length,
+      endCallbacks: this.onSpeechEndCallbacks.length
+    };
   }
 }
 

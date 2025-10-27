@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCameraPermissions, CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
@@ -91,12 +90,26 @@ export default function ScanScreen() {
     }
 
     return () => {
+      // Clear all timers to prevent memory leaks
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
       }
       if (resultTimeoutRef.current) {
         clearTimeout(resultTimeoutRef.current);
+        resultTimeoutRef.current = null;
       }
+      if (autoScanTimeoutRef.current) {
+        clearTimeout(autoScanTimeoutRef.current);
+        autoScanTimeoutRef.current = null;
+      }
+      // Reset states when leaving screen
+      setScanState('idle');
+      setResult('');
+      setCapturedImage(null);
+      setAutoScan(true);
+      // Stop speech
+      speechManager.stop();
     };
   }, [scanMode]);
 
@@ -274,12 +287,20 @@ export default function ScanScreen() {
 
 
   const handleQuit = () => {
+    // Clear all timers
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
     }
     if (resultTimeoutRef.current) {
       clearTimeout(resultTimeoutRef.current);
+      resultTimeoutRef.current = null;
     }
+    if (autoScanTimeoutRef.current) {
+      clearTimeout(autoScanTimeoutRef.current);
+      autoScanTimeoutRef.current = null;
+    }
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});

@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Linking, Platform, Vibration } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 
@@ -85,6 +84,7 @@ export default function EmergencyScreen() {
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAutoCalledRef = useRef<boolean>(false);
+  const autoCallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     initializeLocation();
@@ -103,69 +103,63 @@ export default function EmergencyScreen() {
     setAutoCallInProgress(true);
     
     return () => {
+      // Clear all timers and intervals
       if (callTimerRef.current) clearInterval(callTimerRef.current);
       if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+      if (autoCallTimeoutRef.current) clearTimeout(autoCallTimeoutRef.current);
       if (Platform.OS !== 'web') {
-        try { Speech.stop(); } catch { }
+        // speechManager.stop() is called above, no need for direct Speech.stop()
       }
     };
   }, []);
 
   // Auto-call nearest contact once sorted
   useEffect(() => {
-    if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0 && sortedContacts[0].distance !== undefined) {
-      // Contacts have been sorted by distance, auto-call the nearest one
-      setTimeout(() => {
-        const nearest = sortedContacts[0];
-        const distance = nearest.distance?.toFixed(1) || 'unknown distance';
-        console.log(`Auto-calling nearest contact: ${nearest.name} (${distance}km away)`);
-        
-        // Announce the specific action being taken
-        if (Platform.OS !== 'web') {
-          try {
-            speechManager.speak(
-              `Calling ${nearest.name}, ${distance}km away.`,
-              { rate: 1, language: 'en-US' },
-              () => {
-                handleSelectContact(nearest);
-              }
-            );
-          } catch (error) {
-            handleSelectContact(nearest);
+    if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0) {
+      // Prevent duplicate calls
+      hasAutoCalledRef.current = true;
+      setAutoCallInProgress(false);
+      
+      const contact = sortedContacts[0];
+      const hasDistance = contact.distance !== undefined;
+      const delay = hasDistance ? 2000 : 4000; // Shorter delay if we have location
+      
+      autoCallTimeoutRef.current = setTimeout(() => {
+        if (hasDistance) {
+          const distance = contact.distance?.toFixed(1) || 'unknown';
+          console.log(`Auto-calling nearest contact: ${contact.name} (${distance}km away)`);
+          
+          if (Platform.OS !== 'web') {
+            try {
+              speechManager.speak(
+                `Calling ${contact.name}, ${distance}km away.`,
+                { rate: 1, language: 'en-US' },
+                () => handleSelectContact(contact)
+              );
+            } catch (error) {
+              handleSelectContact(contact);
+            }
+          } else {
+            handleSelectContact(contact);
           }
         } else {
-          handleSelectContact(nearest);
-        }
-        
-        hasAutoCalledRef.current = true;
-        setAutoCallInProgress(false);
-      }, 2000); // 2 second delay after location is loaded
-    } else if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0) {
-      // If location failed, just call the first contact (primary caregiver)
-      setTimeout(() => {
-        const primary = sortedContacts[0];
-        console.log(`Auto-calling primary contact: ${primary.name}`);
-        
-        // Announce fallback action
-        if (Platform.OS !== 'web') {
-          try {
-            speechManager.speak(
-              `Calling ${primary.name}.`,
-              { rate: 1, language: 'en-US' },
-              () => {
-                handleSelectContact(primary);
-              }
-            );
-          } catch (error) {
-            handleSelectContact(primary);
+          console.log(`Auto-calling primary contact: ${contact.name}`);
+          
+          if (Platform.OS !== 'web') {
+            try {
+              speechManager.speak(
+                `Calling ${contact.name}.`,
+                { rate: 1, language: 'en-US' },
+                () => handleSelectContact(contact)
+              );
+            } catch (error) {
+              handleSelectContact(contact);
+            }
+          } else {
+            handleSelectContact(contact);
           }
-        } else {
-          handleSelectContact(primary);
         }
-        
-        hasAutoCalledRef.current = true;
-        setAutoCallInProgress(false);
-      }, 4000); // Longer delay if waiting for location
+      }, delay);
     }
   }, [sortedContacts, autoCallInProgress]);
 
@@ -291,6 +285,18 @@ export default function EmergencyScreen() {
     }, 3000) as ReturnType<typeof setTimeout>;
   };
 
+  const startCallTimer = () => {
+    // Clear any existing timer first
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+    }
+    
+    setCallDuration(0);
+    callTimerRef.current = setInterval(() => {
+      setCallDuration(prev => prev + 1);
+    }, 1000) as ReturnType<typeof setInterval>;
+  };
+
   const initiateCall = (contact: Contact) => {
     setEmergencyState('calling');
     if (Platform.OS !== 'web') {
@@ -309,10 +315,7 @@ export default function EmergencyScreen() {
                 console.log('Speech not available:', error);
               }
             }
-            setCallDuration(0);
-            callTimerRef.current = setInterval(() => {
-              setCallDuration(prev => prev + 1);
-            }, 1000) as ReturnType<typeof setInterval>;
+            startCallTimer();
           }
         );
       } catch (error) {
@@ -320,21 +323,14 @@ export default function EmergencyScreen() {
         // If speech module not available, connect after 2 seconds
         setTimeout(() => {
           setEmergencyState('in-call');
-          setCallDuration(0);
-          callTimerRef.current = setInterval(() => {
-            setCallDuration(prev => prev + 1);
-          }, 1000) as ReturnType<typeof setInterval>;
-
+          startCallTimer();
         }, 2000);
       }
     } else {
       // Web platform - no speech, connect after 2 seconds
       setTimeout(() => {
         setEmergencyState('in-call');
-        setCallDuration(0);
-        callTimerRef.current = setInterval(() => {
-          setCallDuration(prev => prev + 1);
-        }, 1000) as ReturnType<typeof setInterval>;
+        startCallTimer();
       }, 2000);
     }
   };
@@ -367,8 +363,11 @@ export default function EmergencyScreen() {
   };
 
   const handleQuit = () => {
+    // Clear all timers and intervals
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+    if (autoCallTimeoutRef.current) clearTimeout(autoCallTimeoutRef.current);
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
@@ -399,14 +398,17 @@ export default function EmergencyScreen() {
   };
 
   const handleVoiceCommand = (command: string, confidence?: number) => {
-    // Direct number matching
-    const numberMatch = command.match(/^\d+$/);
+    // Extract number from command (both direct numbers and "call X" format)
+    const numberMatch = command.match(/^\d+$/) || command.match(/\b(\d+)\b/);
+    
     if (numberMatch && emergencyState === 'selecting') {
-      const contactIndex = parseInt(numberMatch[0]) - 1; // Convert to 0-based index
+      const contactNumber = numberMatch[0] || numberMatch[1];
+      const contactIndex = parseInt(contactNumber) - 1; // Convert to 0-based index
+      
       if (contactIndex >= 0 && contactIndex < sortedContacts.length) {
         handleSelectContact(sortedContacts[contactIndex]);
       } else {
-        const errorMessage = `Contact number ${numberMatch[0]} doesn't exist. You have ${sortedContacts.length} contacts available.`;
+        const errorMessage = `Contact number ${contactNumber} doesn't exist. You have ${sortedContacts.length} contacts available.`;
         if (Platform.OS !== 'web') {
           speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
         }
@@ -414,26 +416,7 @@ export default function EmergencyScreen() {
       return;
     }
 
-    // Extract number from command (e.g. "call 1" → 1)
-    const numberMatch2 = command.match(/\b(\d+)\b/);
-    
-    if (numberMatch2 && emergencyState === 'selecting') {
-        const contactIndex = parseInt(numberMatch2[1]) - 1; // Convert to 0-based index
-        if (contactIndex >= 0 && contactIndex < sortedContacts.length) {
-            handleSelectContact(sortedContacts[contactIndex]);
-        } else {
-            const errorMessage = `Contact number ${numberMatch2[1]} doesn't exist. You have ${sortedContacts.length} contacts available.`;
-            if (Platform.OS !== 'web') {
-                speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
-            }
-        }
-        return;
-    }
-
-    // Parse complex commands (e.g., "call John")
-    const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
-    
-    // Check for call first/nearest command
+    // Check for call first/nearest command first
     const match = matchCommand(command, EMERGENCY_COMMANDS, 0.6);
     
     if (match && match.command === 'call_first' && emergencyState === 'selecting') {
@@ -442,8 +425,13 @@ export default function EmergencyScreen() {
             console.log(`Calling first contact: ${sortedContacts[0].name}`);
             handleSelectContact(sortedContacts[0]);
         }
+        return;
     }
-    else if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
+    
+    // Parse complex commands (e.g., "call John") only if no direct match
+    const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
+    
+    if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
       // Try to match contact name with fuzzy matching
       const contactNames = sortedContacts.map(c => c.name);
       const nameMatch = matchContactName(parsed.parameter, contactNames, 0.6);
