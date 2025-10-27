@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Linking, Platform, Vibration } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 
@@ -81,12 +80,15 @@ export default function EmergencyScreen() {
   const [sortedContacts, setSortedContacts] = useState<Contact[]>(mockContacts);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [emergencyHistory, setEmergencyHistory] = useState<EmergencyMessage[]>([]);
+  const [autoCallInProgress, setAutoCallInProgress] = useState<boolean>(false);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAutoCalledRef = useRef<boolean>(false);
+  const autoCallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     initializeLocation();
-    const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
+    const welcomeMessage = 'Emergency mode. Calling nearest contact.';
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: 1, language: 'en-US' });
@@ -96,14 +98,70 @@ export default function EmergencyScreen() {
         console.log('Native modules not available:', error);
       }
     }
+    
+    // Mark that we want to auto-call
+    setAutoCallInProgress(true);
+    
     return () => {
+      // Clear all timers and intervals
       if (callTimerRef.current) clearInterval(callTimerRef.current);
       if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+      if (autoCallTimeoutRef.current) clearTimeout(autoCallTimeoutRef.current);
       if (Platform.OS !== 'web') {
-        try { Speech.stop(); } catch { }
+        // speechManager.stop() is called above, no need for direct Speech.stop()
       }
     };
   }, []);
+
+  // Auto-call nearest contact once sorted
+  useEffect(() => {
+    if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0) {
+      // Prevent duplicate calls
+      hasAutoCalledRef.current = true;
+      setAutoCallInProgress(false);
+      
+      const contact = sortedContacts[0];
+      const hasDistance = contact.distance !== undefined;
+      const delay = hasDistance ? 2000 : 4000; // Shorter delay if we have location
+      
+      autoCallTimeoutRef.current = setTimeout(() => {
+        if (hasDistance) {
+          const distance = contact.distance?.toFixed(1) || 'unknown';
+          console.log(`Auto-calling nearest contact: ${contact.name} (${distance}km away)`);
+          
+          if (Platform.OS !== 'web') {
+            try {
+              speechManager.speak(
+                `Calling ${contact.name}, ${distance}km away.`,
+                { rate: 1, language: 'en-US' },
+                () => handleSelectContact(contact)
+              );
+            } catch (error) {
+              handleSelectContact(contact);
+            }
+          } else {
+            handleSelectContact(contact);
+          }
+        } else {
+          console.log(`Auto-calling primary contact: ${contact.name}`);
+          
+          if (Platform.OS !== 'web') {
+            try {
+              speechManager.speak(
+                `Calling ${contact.name}.`,
+                { rate: 1, language: 'en-US' },
+                () => handleSelectContact(contact)
+              );
+            } catch (error) {
+              handleSelectContact(contact);
+            }
+          } else {
+            handleSelectContact(contact);
+          }
+        }
+      }, delay);
+    }
+  }, [sortedContacts, autoCallInProgress]);
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -163,7 +221,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        speechManager.speak(`Selected ${contact.name}, ${contact.relationship}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Calling ${contact.name}.`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -187,7 +245,7 @@ export default function EmergencyScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Sending message to ${contact.name}.`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -204,7 +262,7 @@ export default function EmergencyScreen() {
       if (Platform.OS !== 'web') {
         try {
           speechManager.speak(
-            `Emergency message sent to ${contact.name}. Now initiating call.`,
+            `Message sent. Calling ${contact.name}.`,
             { rate: 1, language: 'en-US' },
             () => {
               // Initiate call immediately after speech finishes
@@ -227,28 +285,37 @@ export default function EmergencyScreen() {
     }, 3000) as ReturnType<typeof setTimeout>;
   };
 
+  const startCallTimer = () => {
+    // Clear any existing timer first
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+    }
+    
+    setCallDuration(0);
+    callTimerRef.current = setInterval(() => {
+      setCallDuration(prev => prev + 1);
+    }, 1000) as ReturnType<typeof setInterval>;
+  };
+
   const initiateCall = (contact: Contact) => {
     setEmergencyState('calling');
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
         speechManager.speak(
-          `Calling ${contact.name}...`,
+          `Calling ${contact.name}.`,
           { rate: 1, language: 'en-US' },
           () => {
             // Connect call immediately after speech finishes
             setEmergencyState('in-call');
             if (Platform.OS !== 'web') {
               try {
-                speechManager.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+                speechManager.speak(`Connected to ${contact.name}.`, { rate: 1, language: 'en-US' });
               } catch (error) {
                 console.log('Speech not available:', error);
               }
             }
-            setCallDuration(0);
-            callTimerRef.current = setInterval(() => {
-              setCallDuration(prev => prev + 1);
-            }, 1000) as ReturnType<typeof setInterval>;
+            startCallTimer();
           }
         );
       } catch (error) {
@@ -256,21 +323,14 @@ export default function EmergencyScreen() {
         // If speech module not available, connect after 2 seconds
         setTimeout(() => {
           setEmergencyState('in-call');
-          setCallDuration(0);
-          callTimerRef.current = setInterval(() => {
-            setCallDuration(prev => prev + 1);
-          }, 1000) as ReturnType<typeof setInterval>;
-
+          startCallTimer();
         }, 2000);
       }
     } else {
       // Web platform - no speech, connect after 2 seconds
       setTimeout(() => {
         setEmergencyState('in-call');
-        setCallDuration(0);
-        callTimerRef.current = setInterval(() => {
-          setCallDuration(prev => prev + 1);
-        }, 1000) as ReturnType<typeof setInterval>;
+        startCallTimer();
       }, 2000);
     }
   };
@@ -281,8 +341,10 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+        const minutes = Math.floor(callDuration / 60);
+        const seconds = callDuration % 60;
         speechManager.speak(
-          `Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`,
+          `Call ended. Duration: ${minutes} minutes ${seconds} seconds.`,
           { rate: 1, language: 'en-US' },
           () => {
             // Go back immediately after speech finishes
@@ -301,8 +363,11 @@ export default function EmergencyScreen() {
   };
 
   const handleQuit = () => {
+    // Clear all timers and intervals
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+    if (autoCallTimeoutRef.current) clearTimeout(autoCallTimeoutRef.current);
+    
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
@@ -333,20 +398,40 @@ export default function EmergencyScreen() {
   };
 
   const handleVoiceCommand = (command: string, confidence?: number) => {
-    // Parse complex commands (e.g., "call John")
-    const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
+    // Extract number from command (both direct numbers and "call X" format)
+    const numberMatch = command.match(/^\d+$/) || command.match(/\b(\d+)\b/);
     
-    // Check for call first/nearest command
+    if (numberMatch && emergencyState === 'selecting') {
+      const contactNumber = numberMatch[0] || numberMatch[1];
+      const contactIndex = parseInt(contactNumber) - 1; // Convert to 0-based index
+      
+      if (contactIndex >= 0 && contactIndex < sortedContacts.length) {
+        handleSelectContact(sortedContacts[contactIndex]);
+      } else {
+        const errorMessage = `Contact number ${contactNumber} doesn't exist. You have ${sortedContacts.length} contacts available.`;
+        if (Platform.OS !== 'web') {
+          speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
+        }
+      }
+      return;
+    }
+
+    // Check for call first/nearest command first
     const match = matchCommand(command, EMERGENCY_COMMANDS, 0.6);
     
     if (match && match.command === 'call_first' && emergencyState === 'selecting') {
-      // Call first/nearest contact
-      if (sortedContacts.length > 0) {
-        console.log(`Calling first contact: ${sortedContacts[0].name}`);
-        handleSelectContact(sortedContacts[0]);
-      }
+        // Call first/nearest contact
+        if (sortedContacts.length > 0) {
+            console.log(`Calling first contact: ${sortedContacts[0].name}`);
+            handleSelectContact(sortedContacts[0]);
+        }
+        return;
     }
-    else if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
+    
+    // Parse complex commands (e.g., "call John") only if no direct match
+    const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
+    
+    if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
       // Try to match contact name with fuzzy matching
       const contactNames = sortedContacts.map(c => c.name);
       const nameMatch = matchContactName(parsed.parameter, contactNames, 0.6);
@@ -383,7 +468,7 @@ export default function EmergencyScreen() {
         if (suggestions.length > 0) {
           errorMessage += `Try saying: ${suggestions.slice(0, 2).join(', or ')}.`;
         } else {
-          errorMessage += "Say 'call' followed by a contact name, or 'call first' for nearest contact.";
+          errorMessage += "Say 'call' followed by a contact name or number.";
         }
       } else if (emergencyState === 'in-call') {
         errorMessage = "Say 'end call' to hang up.";
@@ -392,8 +477,7 @@ export default function EmergencyScreen() {
       if (Platform.OS !== 'web') {
         speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
-      
-      console.log(`Command not recognized: "${command}" in state: ${emergencyState}`);
+      return; // Stay in current state - don't navigate
     }
   };
 
@@ -472,7 +556,16 @@ export default function EmergencyScreen() {
         <View className="items-center justify-center px-6 gap-y-6">
           {emergencyState === 'selecting' && (
             <View className="items-center gap-y-6 w-full">
-              <Text className="text-lg text-white font-medium text-center opacity-90">Select Emergency Contact</Text>
+              {autoCallInProgress ? (
+                <View className="items-center gap-y-4">
+                  <Text className="text-lg text-white font-medium text-center opacity-90">Finding nearest contact...</Text>
+                  <View className="items-center">
+                    <View className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  </View>
+                </View>
+              ) : (
+                <Text className="text-lg text-white font-medium text-center opacity-90">Select Emergency Contact</Text>
+              )}
               <View className="w-full gap-4 max-w-sm">
                 {sortedContacts.map((contact) => (
                   <TouchableOpacity
@@ -549,7 +642,7 @@ export default function EmergencyScreen() {
         {/* Voice Command Listener */}
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
-          enabled={emergencyState !== 'sending-location' && emergencyState !== 'message-sent' && emergencyState !== 'calling' && emergencyState !== 'ended'}
+          enabled={!autoCallInProgress && emergencyState !== 'sending-location' && emergencyState !== 'message-sent' && emergencyState !== 'calling' && emergencyState !== 'ended'}
           continuousMode={true}
           showVisualFeedback={true}
         />

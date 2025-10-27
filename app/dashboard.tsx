@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
@@ -55,8 +54,7 @@ export default function DashboardScreen() {
   ];
 
   useEffect(() => {
-    const welcomeMessage =
-      'Welcome to BrailleWalk dashboard. You have three main features available: Navigate for walking guidance, Scan Object for reading text and identifying objects, and I need help for emergency contacts. Tap any feature to get started.';
+    const welcomeMessage = 'BrailleWalk ready. Choose navigate, scan, or emergency.';
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: 1 });
@@ -65,6 +63,13 @@ export default function DashboardScreen() {
         console.log('Speech/Haptics not available:', error);
       }
     }
+
+    return () => {
+      // Reset state when leaving dashboard
+      setSelectedFeature(null);
+      // Stop any ongoing speech
+      speechManager.stop();
+    };
   }, []);
 
   const handleFeaturePress = (feature: DashboardFeature) => {
@@ -76,10 +81,10 @@ export default function DashboardScreen() {
 
     const featureMessage =
       feature.id === 'navigate'
-        ? 'Starting navigation mode. You will receive real-time guidance for safe walking.'
+        ? 'Starting navigation.'
         : feature.id === 'scan'
-        ? 'Starting scan mode. Point your camera at objects or text to get descriptions.'
-        : 'Starting emergency mode. You will be connected with your caregiver.';
+        ? 'Starting scan mode.'
+        : 'Starting emergency mode.';
 
     if (Platform.OS !== 'web') {
       try {
@@ -110,7 +115,7 @@ export default function DashboardScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
     
-    const instructionsMessage = 'Tap Navigate for walking guidance, Scan Object for reading text and identifying objects, or I need help for emergency contacts.';
+    const instructionsMessage = 'Available options: navigate, scan, or emergency.';
     
     if (Platform.OS !== 'web') {
       try {

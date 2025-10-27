@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Pressable, Platform, Animated } from 'react-native';
+import { View, Text, Platform, Animated } from 'react-native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
-import {
-    ExpoSpeechRecognitionModule,
-    useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { speechManager } from '@/utils/speechManager';
 
 interface VoiceCommandListenerProps {
@@ -62,7 +59,7 @@ export default function VoiceCommandListener({
         const handleSpeechEnd = () => {
             setIsPausedForSpeech(false);
             // Resume listening after app finishes speaking
-            if (enabled && permissionGranted) {
+            if (enabled && permissionGranted && !isWaitingForCommand) {
                 setTimeout(() => {
                     startContinuousListening();
                 }, 300);
@@ -139,7 +136,6 @@ export default function VoiceCommandListener({
     useSpeechRecognitionEvent('result', async (event) => {
         const transcript = event.results[0]?.transcript?.toLowerCase() || '';
         const isFinal = event.isFinal || false;
-        console.log(event)
         setRecognizedText(transcript);
 
         // Don't process if app is speaking (echo cancellation)
@@ -251,29 +247,23 @@ export default function VoiceCommandListener({
 
         // Retry with exponential backoff for other errors
         if (retryCount < maxRetries) {
+            const currentRetry = retryCount + 1;
             const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 8000); // Max 8 seconds
             console.log(`Retrying in ${backoffDelay}ms...`);
 
             retryTimeoutRef.current = setTimeout(() => {
                 if (enabled && permissionGranted) {
-                    setRetryCount(prev => prev + 1);
-                    console.log(`Retry attempt ${retryCount + 1}/${maxRetries}`);
+                    setRetryCount(currentRetry);
+                    console.log(`Retry attempt ${currentRetry}/${maxRetries}`);
                     startContinuousListening();
                 }
             }, backoffDelay);
         } else {
-            // Max retries reached
-            console.error('Max retries reached. Speech recognition failed.');
+            // Max retries reached - stop retrying completely
+            console.error('Max retries reached. Speech recognition disabled until next restart.');
             setRetryCount(0); // Reset for next time
-
-            // Try one more time after 10 seconds
-            retryTimeoutRef.current = setTimeout(() => {
-                if (enabled && permissionGranted) {
-                    console.log('Final retry attempt after cooldown...');
-                    setRetryCount(0);
-                    startContinuousListening();
-                }
-            }, 10000);
+            
+            // Don't retry automatically - wait for next user interaction or restart
         }
     });
 
@@ -351,7 +341,7 @@ export default function VoiceCommandListener({
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsWaitingForCommand(true);
-        Speech.speak('Listening', { rate: 1, language: 'en-US' });
+        speechManager.speak('Listening', { rate: 1, language: 'en-US' });
 
         // Stop continuous listening temporarily
         try {
@@ -406,6 +396,7 @@ export default function VoiceCommandListener({
 
             try {
                 ExpoSpeechRecognitionModule.stop();
+                speechManager.stop();
             } catch (error) {
                 console.error('Cleanup error:', error);
             }
@@ -414,17 +405,23 @@ export default function VoiceCommandListener({
 
     // Stop/start listening based on enabled prop
     useEffect(() => {
-        if (isListening) {
+        if (!enabled && isListening) {
             try {
                 ExpoSpeechRecognitionModule.stop();
             } catch (error) {
                 console.error('Stop error:', error);
             }
             setIsListening(false);
+            // Reset states when disabled
+            setIsWaitingForCommand(false);
+            setRetryCount(0);
+            setNetworkError(false);
+            hasNotifiedNetworkError.current = false;
+            lastProcessedCommand.current = '';
         } else if (enabled && !isListening && permissionGranted) {
             startContinuousListening();
         }
-    }, [enabled]);
+    }, [enabled, permissionGranted]);
 
     if (!showVisualFeedback) {
         return null;
@@ -436,10 +433,10 @@ export default function VoiceCommandListener({
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <View
                     className={`w-16 h-16 rounded-full items-center justify-center shadow-lg ${networkError ? 'bg-red-500' :
-                            isPausedForSpeech ? 'bg-gray-500' :
-                                isWaitingForCommand ? 'bg-red-500' :
-                                    isListening && continuousMode ? 'bg-green-500' :
-                                        'bg-blue-500'
+                        isPausedForSpeech ? 'bg-gray-500' :
+                            isWaitingForCommand ? 'bg-red-500' :
+                                isListening && continuousMode ? 'bg-green-500' :
+                                    'bg-blue-500'
                         }`}
                     accessibilityLabel={networkError ? "Network error" : continuousMode ? "Always listening - ready for voice commands" : "Voice recognition active"}
                     accessibilityHint={networkError ? "Check internet connection" : continuousMode ? "Speak your command anytime" : "Voice commands active"}

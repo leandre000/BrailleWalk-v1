@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Alert, Vibration, Platform } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import GradientBackground from '@/components/GradientBackground';
@@ -20,14 +19,13 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [authState, setAuthState] = useState<AuthState>('idle');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('both');
-  const [speechRate] = useState<number>(1);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
+    const welcomeMessage = 'Welcome to BrailleWalk. Tap to authenticate.';
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(welcomeMessage, { rate: speechRate });
+        speechManager.speak(welcomeMessage, { rate: 1 });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
@@ -35,17 +33,14 @@ export default function AuthScreen() {
     }
 
     return () => {
+      // Clear timer and reset state when leaving
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
       }
-      
-      if (Platform.OS !== 'web') {
-        try {
-          Speech.stop();
-        } catch (error) {
-          console.log('Speech stop failed:', error);
-        }
-      }
+      setAuthState('idle');
+      setAuthMethod('both');
+      speechManager.stop();
     };
   }, []);
 
@@ -59,14 +54,14 @@ export default function AuthScreen() {
     }
 
     const authMessage = authMethod === 'voice'
-      ? 'Listening for voice recognition...'
+      ? 'Voice authentication...'
       : authMethod === 'face'
-        ? 'Analyzing face recognition...'
-        : 'Authenticating with voice and face recognition...';
+        ? 'Face authentication...'
+        : 'Authenticating...';
 
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(authMessage, { rate: speechRate, language: 'en-US' });
+        speechManager.speak(authMessage, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -81,17 +76,13 @@ export default function AuthScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         }
 
-        const successMessage = authMethod === 'voice'
-          ? 'Voice recognized successfully. Welcome back to BrailleWalk.'
-          : authMethod === 'face'
-            ? 'Face recognized successfully. Welcome back to BrailleWalk.'
-            : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
+        const successMessage = 'Authentication successful.';
 
         if (Platform.OS !== 'web') {
           try {
             speechManager.speak(
               successMessage, 
-              { rate: speechRate, language: 'en-US' },
+              { rate: 1, language: 'en-US' },
               () => {
                 // Route immediately after speech finishes
                 router.replace('/dashboard');
@@ -117,10 +108,10 @@ export default function AuthScreen() {
           Vibration.vibrate([0, 200, 100, 200]);
         }
 
-        const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
+        const failMessage = 'Authentication failed. Try again.';
         if (Platform.OS !== 'web') {
           try {
-            speechManager.speak(failMessage, { rate: speechRate, language: 'en-US' });
+            speechManager.speak(failMessage, { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Speech not available:', error);
           }
