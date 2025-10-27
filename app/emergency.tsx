@@ -81,12 +81,14 @@ export default function EmergencyScreen() {
   const [sortedContacts, setSortedContacts] = useState<Contact[]>(mockContacts);
   const [callDuration, setCallDuration] = useState<number>(0);
   const [emergencyHistory, setEmergencyHistory] = useState<EmergencyMessage[]>([]);
+  const [autoCallInProgress, setAutoCallInProgress] = useState<boolean>(false);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAutoCalledRef = useRef<boolean>(false);
 
   useEffect(() => {
     initializeLocation();
-    const welcomeMessage = 'Emergency mode activated. You can contact your caregivers, send emergency messages, or make urgent calls. Choose your emergency contact.';
+    const welcomeMessage = 'Emergency mode. Calling nearest contact.';
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: 1, language: 'en-US' });
@@ -96,6 +98,10 @@ export default function EmergencyScreen() {
         console.log('Native modules not available:', error);
       }
     }
+    
+    // Mark that we want to auto-call
+    setAutoCallInProgress(true);
+    
     return () => {
       if (callTimerRef.current) clearInterval(callTimerRef.current);
       if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
@@ -104,6 +110,64 @@ export default function EmergencyScreen() {
       }
     };
   }, []);
+
+  // Auto-call nearest contact once sorted
+  useEffect(() => {
+    if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0 && sortedContacts[0].distance !== undefined) {
+      // Contacts have been sorted by distance, auto-call the nearest one
+      setTimeout(() => {
+        const nearest = sortedContacts[0];
+        const distance = nearest.distance?.toFixed(1) || 'unknown distance';
+        console.log(`Auto-calling nearest contact: ${nearest.name} (${distance}km away)`);
+        
+        // Announce the specific action being taken
+        if (Platform.OS !== 'web') {
+          try {
+            speechManager.speak(
+              `Calling ${nearest.name}, ${distance}km away.`,
+              { rate: 1, language: 'en-US' },
+              () => {
+                handleSelectContact(nearest);
+              }
+            );
+          } catch (error) {
+            handleSelectContact(nearest);
+          }
+        } else {
+          handleSelectContact(nearest);
+        }
+        
+        hasAutoCalledRef.current = true;
+        setAutoCallInProgress(false);
+      }, 2000); // 2 second delay after location is loaded
+    } else if (autoCallInProgress && !hasAutoCalledRef.current && sortedContacts.length > 0) {
+      // If location failed, just call the first contact (primary caregiver)
+      setTimeout(() => {
+        const primary = sortedContacts[0];
+        console.log(`Auto-calling primary contact: ${primary.name}`);
+        
+        // Announce fallback action
+        if (Platform.OS !== 'web') {
+          try {
+            speechManager.speak(
+              `Calling ${primary.name}.`,
+              { rate: 1, language: 'en-US' },
+              () => {
+                handleSelectContact(primary);
+              }
+            );
+          } catch (error) {
+            handleSelectContact(primary);
+          }
+        } else {
+          handleSelectContact(primary);
+        }
+        
+        hasAutoCalledRef.current = true;
+        setAutoCallInProgress(false);
+      }, 4000); // Longer delay if waiting for location
+    }
+  }, [sortedContacts, autoCallInProgress]);
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -163,7 +227,7 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        speechManager.speak(`Selected ${contact.name}, ${contact.relationship}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Calling ${contact.name}.`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -187,7 +251,7 @@ export default function EmergencyScreen() {
 
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(`Sending emergency message and location to ${contact.name}`, { rate: 1, language: 'en-US' });
+        speechManager.speak(`Sending message to ${contact.name}.`, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -204,7 +268,7 @@ export default function EmergencyScreen() {
       if (Platform.OS !== 'web') {
         try {
           speechManager.speak(
-            `Emergency message sent to ${contact.name}. Now initiating call.`,
+            `Message sent. Calling ${contact.name}.`,
             { rate: 1, language: 'en-US' },
             () => {
               // Initiate call immediately after speech finishes
@@ -233,14 +297,14 @@ export default function EmergencyScreen() {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => { });
         speechManager.speak(
-          `Calling ${contact.name}...`,
+          `Calling ${contact.name}.`,
           { rate: 1, language: 'en-US' },
           () => {
             // Connect call immediately after speech finishes
             setEmergencyState('in-call');
             if (Platform.OS !== 'web') {
               try {
-                speechManager.speak(`Connected with ${contact.name}. Call in progress.`, { rate: 1, language: 'en-US' });
+                speechManager.speak(`Connected to ${contact.name}.`, { rate: 1, language: 'en-US' });
               } catch (error) {
                 console.log('Speech not available:', error);
               }
@@ -281,8 +345,10 @@ export default function EmergencyScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+        const minutes = Math.floor(callDuration / 60);
+        const seconds = callDuration % 60;
         speechManager.speak(
-          `Call ended. Duration: ${Math.floor(callDuration / 60)} minutes ${callDuration % 60} seconds.`,
+          `Call ended. Duration: ${minutes} minutes ${seconds} seconds.`,
           { rate: 1, language: 'en-US' },
           () => {
             // Go back immediately after speech finishes
@@ -502,7 +568,16 @@ export default function EmergencyScreen() {
         <View className="items-center justify-center px-6 gap-y-6">
           {emergencyState === 'selecting' && (
             <View className="items-center gap-y-6 w-full">
-              <Text className="text-lg text-white font-medium text-center opacity-90">Select Emergency Contact</Text>
+              {autoCallInProgress ? (
+                <View className="items-center gap-y-4">
+                  <Text className="text-lg text-white font-medium text-center opacity-90">Finding nearest contact...</Text>
+                  <View className="items-center">
+                    <View className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  </View>
+                </View>
+              ) : (
+                <Text className="text-lg text-white font-medium text-center opacity-90">Select Emergency Contact</Text>
+              )}
               <View className="w-full gap-4 max-w-sm">
                 {sortedContacts.map((contact) => (
                   <TouchableOpacity
@@ -579,7 +654,7 @@ export default function EmergencyScreen() {
         {/* Voice Command Listener */}
         <VoiceCommandListener
           onCommand={handleVoiceCommand}
-          enabled={emergencyState !== 'sending-location' && emergencyState !== 'message-sent' && emergencyState !== 'calling' && emergencyState !== 'ended'}
+          enabled={!autoCallInProgress && emergencyState !== 'sending-location' && emergencyState !== 'message-sent' && emergencyState !== 'calling' && emergencyState !== 'ended'}
           continuousMode={true}
           showVisualFeedback={true}
         />

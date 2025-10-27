@@ -24,7 +24,7 @@ export default function AuthScreen() {
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const welcomeMessage = 'Welcome to BrailleWalk. Your AI-powered vision assistant. Tap anywhere to authenticate using voice or face recognition.';
+    const welcomeMessage = 'Welcome to BrailleWalk. Tap to authenticate.';
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: speechRate });
@@ -59,10 +59,10 @@ export default function AuthScreen() {
     }
 
     const authMessage = authMethod === 'voice'
-      ? 'Listening for voice recognition...'
+      ? 'Voice authentication...'
       : authMethod === 'face'
-        ? 'Analyzing face recognition...'
-        : 'Authenticating with voice and face recognition...';
+        ? 'Face authentication...'
+        : 'Authenticating...';
 
     if (Platform.OS !== 'web') {
       try {
@@ -81,11 +81,7 @@ export default function AuthScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         }
 
-        const successMessage = authMethod === 'voice'
-          ? 'Voice recognized successfully. Welcome back to BrailleWalk.'
-          : authMethod === 'face'
-            ? 'Face recognized successfully. Welcome back to BrailleWalk.'
-            : 'Authentication successful. Voice and face recognized. Welcome back to BrailleWalk.';
+        const successMessage = 'Authentication successful.';
 
         if (Platform.OS !== 'web') {
           try {
@@ -117,7 +113,7 @@ export default function AuthScreen() {
           Vibration.vibrate([0, 200, 100, 200]);
         }
 
-        const failMessage = 'Authentication failed. Please try again. Tap anywhere to retry.';
+        const failMessage = 'Authentication failed. Try again.';
         if (Platform.OS !== 'web') {
           try {
             speechManager.speak(failMessage, { rate: speechRate, language: 'en-US' });

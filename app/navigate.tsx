@@ -76,7 +76,7 @@ export default function NavigateScreen() {
         if (Platform.OS !== 'web') {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            speechManager.speak('Location services activated. Navigation ready.', { rate: 1, language: 'en-US' });
+            speechManager.speak('Navigation ready.', { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Native modules not available:', error);
           }
@@ -87,7 +87,7 @@ export default function NavigateScreen() {
       
       if (Platform.OS !== 'web') {
         try {
-          speechManager.speak('Navigation mode activated with limited location features.', { rate: 1 });
+          speechManager.speak('Navigation mode. Limited location.', { rate: 1 });
         } catch (err) {
           console.log('Speech not available:', err);
         }
@@ -163,7 +163,7 @@ export default function NavigateScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        speechManager.speak('Exiting navigation mode', { rate: 1 });
+        speechManager.speak('Navigation stopped.', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
       }
