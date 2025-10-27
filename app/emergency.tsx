@@ -333,6 +333,37 @@ export default function EmergencyScreen() {
   };
 
   const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Direct number matching
+    const numberMatch = command.match(/^\d+$/);
+    if (numberMatch && emergencyState === 'selecting') {
+      const contactIndex = parseInt(numberMatch[0]) - 1; // Convert to 0-based index
+      if (contactIndex >= 0 && contactIndex < sortedContacts.length) {
+        handleSelectContact(sortedContacts[contactIndex]);
+      } else {
+        const errorMessage = `Contact number ${numberMatch[0]} doesn't exist. You have ${sortedContacts.length} contacts available.`;
+        if (Platform.OS !== 'web') {
+          speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
+        }
+      }
+      return;
+    }
+
+    // Extract number from command (e.g. "call 1" → 1)
+    const numberMatch2 = command.match(/\b(\d+)\b/);
+    
+    if (numberMatch2 && emergencyState === 'selecting') {
+        const contactIndex = parseInt(numberMatch2[1]) - 1; // Convert to 0-based index
+        if (contactIndex >= 0 && contactIndex < sortedContacts.length) {
+            handleSelectContact(sortedContacts[contactIndex]);
+        } else {
+            const errorMessage = `Contact number ${numberMatch2[1]} doesn't exist. You have ${sortedContacts.length} contacts available.`;
+            if (Platform.OS !== 'web') {
+                speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
+            }
+        }
+        return;
+    }
+
     // Parse complex commands (e.g., "call John")
     const parsed = parseComplexCommand(command, EMERGENCY_COMMANDS);
     
@@ -340,11 +371,11 @@ export default function EmergencyScreen() {
     const match = matchCommand(command, EMERGENCY_COMMANDS, 0.6);
     
     if (match && match.command === 'call_first' && emergencyState === 'selecting') {
-      // Call first/nearest contact
-      if (sortedContacts.length > 0) {
-        console.log(`Calling first contact: ${sortedContacts[0].name}`);
-        handleSelectContact(sortedContacts[0]);
-      }
+        // Call first/nearest contact
+        if (sortedContacts.length > 0) {
+            console.log(`Calling first contact: ${sortedContacts[0].name}`);
+            handleSelectContact(sortedContacts[0]);
+        }
     }
     else if (parsed.action === 'call_first' && parsed.parameter && emergencyState === 'selecting') {
       // Try to match contact name with fuzzy matching
@@ -383,7 +414,7 @@ export default function EmergencyScreen() {
         if (suggestions.length > 0) {
           errorMessage += `Try saying: ${suggestions.slice(0, 2).join(', or ')}.`;
         } else {
-          errorMessage += "Say 'call' followed by a contact name, or 'call first' for nearest contact.";
+          errorMessage += "Say 'call' followed by a contact name or number.";
         }
       } else if (emergencyState === 'in-call') {
         errorMessage = "Say 'end call' to hang up.";
@@ -392,8 +423,7 @@ export default function EmergencyScreen() {
       if (Platform.OS !== 'web') {
         speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
-      
-      console.log(`Command not recognized: "${command}" in state: ${emergencyState}`);
+      return; // Stay in current state - don't navigate
     }
   };
 

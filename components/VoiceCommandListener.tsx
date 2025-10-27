@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Pressable, Platform, Animated } from 'react-native';
+import { View, Text, Platform, Animated } from 'react-native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
-import {
-    ExpoSpeechRecognitionModule,
-    useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { speechManager } from '@/utils/speechManager';
 
 interface VoiceCommandListenerProps {
@@ -62,7 +59,7 @@ export default function VoiceCommandListener({
         const handleSpeechEnd = () => {
             setIsPausedForSpeech(false);
             // Resume listening after app finishes speaking
-            if (enabled && permissionGranted) {
+            if (enabled && permissionGranted && !isWaitingForCommand) {
                 setTimeout(() => {
                     startContinuousListening();
                 }, 300);
@@ -139,7 +136,6 @@ export default function VoiceCommandListener({
     useSpeechRecognitionEvent('result', async (event) => {
         const transcript = event.results[0]?.transcript?.toLowerCase() || '';
         const isFinal = event.isFinal || false;
-        console.log(event)
         setRecognizedText(transcript);
 
         // Don't process if app is speaking (echo cancellation)
@@ -406,6 +402,7 @@ export default function VoiceCommandListener({
 
             try {
                 ExpoSpeechRecognitionModule.stop();
+                speechManager.stop()
             } catch (error) {
                 console.error('Cleanup error:', error);
             }
@@ -436,10 +433,10 @@ export default function VoiceCommandListener({
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <View
                     className={`w-16 h-16 rounded-full items-center justify-center shadow-lg ${networkError ? 'bg-red-500' :
-                            isPausedForSpeech ? 'bg-gray-500' :
-                                isWaitingForCommand ? 'bg-red-500' :
-                                    isListening && continuousMode ? 'bg-green-500' :
-                                        'bg-blue-500'
+                        isPausedForSpeech ? 'bg-gray-500' :
+                            isWaitingForCommand ? 'bg-red-500' :
+                                isListening && continuousMode ? 'bg-green-500' :
+                                    'bg-blue-500'
                         }`}
                     accessibilityLabel={networkError ? "Network error" : continuousMode ? "Always listening - ready for voice commands" : "Voice recognition active"}
                     accessibilityHint={networkError ? "Check internet connection" : continuousMode ? "Speak your command anytime" : "Voice commands active"}
