@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import GradientBackground from '@/components/GradientBackground';
 import Waveform from '@/components/Waveform';
 import VoiceCommandListener from '@/components/VoiceCommandListener';
-import { matchCommand, getSuggestions, GLOBAL_COMMANDS } from '@/utils/commandMatcher';
+import { matchCommand, getSuggestions} from '@/utils/commandMatcher';
 import { speechManager } from '@/utils/speechManager';
 
 type AuthState = 'idle' | 'authenticating' | 'success' | 'failed';
@@ -22,7 +22,7 @@ export default function AuthScreen() {
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const welcomeMessage = 'Welcome to BrailleWalk. Tap to authenticate.';
+    const welcomeMessage = 'Welcome to BrailleWalk. Tap to authenticate or Say login to authenticate.';
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: 1 });

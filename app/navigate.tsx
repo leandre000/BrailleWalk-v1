@@ -55,7 +55,7 @@ export default function NavigateScreen() {
   useEffect(() => {
     initializeLocation();
     startNavigationSequence();
-    
+
     return () => {
       // Stop navigation sequence
       navigationSequenceRef.current = false;
@@ -67,7 +67,7 @@ export default function NavigateScreen() {
       // Stop speech
       speechManager.stop();
       if (Platform.OS !== 'web') {
-        try { Speech.stop(); } catch {}
+        try { Speech.stop(); } catch { }
       }
       // Reset states
       setNavState('waiting');
@@ -81,14 +81,14 @@ export default function NavigateScreen() {
   const initializeLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
-        
+
         if (Platform.OS !== 'web') {
           try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
             speechManager.speak('Navigation ready.', { rate: 1, language: 'en-US' });
           } catch (error) {
             console.log('Native modules not available:', error);
@@ -97,7 +97,7 @@ export default function NavigateScreen() {
       }
     } catch (error) {
       console.log('Location error:', error);
-      
+
       if (Platform.OS !== 'web') {
         try {
           speechManager.speak('Navigation mode. Limited location.', { rate: 1 });
@@ -111,10 +111,10 @@ export default function NavigateScreen() {
   const startNavigationSequence = () => {
     navigationSequenceRef.current = true;
     let instructionIndex = 0;
-    
+
     const processInstruction = () => {
       if (instructionIndex >= navigationInstructions.length || !navigationSequenceRef.current) return;
-      
+
       const currentInstruction = navigationInstructions[instructionIndex];
       setNavState(currentInstruction.type);
       setInstruction(currentInstruction.text);
@@ -123,27 +123,27 @@ export default function NavigateScreen() {
           ? currentInstruction.direction
           : null
       );
-      
+
       if (currentInstruction.type === 'obstacle') {
         const obstacleTypes: ObstacleType[] = ['person', 'vehicle', 'object', 'stairs', 'curb'];
         setObstacleType(obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]);
       } else {
         setObstacleType(null);
       }
-      
+
       if (Platform.OS !== 'web') {
         try {
           if (currentInstruction.priority === 'high') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => { });
             Vibration.vibrate([0, 200, 100, 200]);
           } else if (currentInstruction.priority === 'medium') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
           } else {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
           }
-          
-          speechManager.speak(currentInstruction.text, { 
-            rate: 1, 
+
+          speechManager.speak(currentInstruction.text, {
+            rate: 1,
             language: 'en-US'
           }, () => {
             // Wait 1 second after speech finishes, then next instruction
@@ -162,7 +162,7 @@ export default function NavigateScreen() {
         speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
       }
     };
-    
+
     processInstruction();
   };
 
@@ -177,7 +177,7 @@ export default function NavigateScreen() {
     speechManager.stop();
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
         speechManager.speak('Navigation stopped.', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
@@ -190,12 +190,12 @@ export default function NavigateScreen() {
     setIsPaused(!isPaused);
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Haptics not available:', error);
       }
     }
-    
+
     if (isPaused) {
       if (Platform.OS !== 'web') {
         try {
@@ -223,7 +223,7 @@ export default function NavigateScreen() {
   const handleRepeatInstruction = () => {
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
         speechManager.speak(instruction, { rate: 1, language: 'en-US' });
       } catch (error) {
         console.log('Native modules not available:', error);
@@ -267,10 +267,10 @@ export default function NavigateScreen() {
     console.log(`Voice command: "${command}" (confidence: ${confidence || 'unknown'})`);
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, NAVIGATION_COMMANDS, 0.6);
-    
+
     if (match) {
       console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
-      
+
       // Handle matched command
       if (match.command === 'pause') {
         if (!isPaused) {
@@ -291,25 +291,25 @@ export default function NavigateScreen() {
     } else {
       // Command not recognized - provide helpful suggestions
       const suggestions = getSuggestions(command, NAVIGATION_COMMANDS, 3);
-      
+
       let errorMessage = "I didn't understand that. ";
       if (suggestions.length > 0) {
         errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
       } else {
         errorMessage += "Try saying: pause, resume, repeat, or exit.";
       }
-      
+
       if (Platform.OS !== 'web') {
         speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
-      
+
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 
   return (
     <GradientBackground>
-      <View 
+      <View
         className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
@@ -322,7 +322,7 @@ export default function NavigateScreen() {
           <Text className="text-lg text-white font-medium  opacity-90">Navigation mode active</Text>
 
           <View className="">
-            <View 
+            <View
               className="w-64 h-64 rounded-full bg-white/10 items-center justify-center border-4"
               style={{ borderColor: getStatusColor() }}
             >
@@ -330,11 +330,11 @@ export default function NavigateScreen() {
             </View>
           </View>
 
-          <Text 
+          <Text
             className="text-xl font-semibold text-center px-8 "
             style={{ color: getStatusColor() }}
           >{instruction}</Text>
-        
+
         </View>
 
         <View className="items-center gap-4">
@@ -348,7 +348,7 @@ export default function NavigateScreen() {
               <MaterialIcons name="volume-up" size={22} color="#FFFFFF" />
               <Text className="text-sm text-white font-medium">Repeat</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={handlePauseResume}
               className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
@@ -359,9 +359,9 @@ export default function NavigateScreen() {
               <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
             </TouchableOpacity>
           </View>
-          
+
           <Waveform isActive={navState !== 'arrived' && !isPaused} />
-          
+
           <TouchableOpacity
             onPress={handleQuit}
             className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"

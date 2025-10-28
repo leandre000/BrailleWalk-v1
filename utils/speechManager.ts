@@ -111,7 +111,7 @@ class SpeechManager {
           // Speech failed
           this.isSpeaking = false;
           this.onSpeechEndCallbacks.forEach(cb => cb());
-          
+
           if (onComplete) {
             onComplete();
           }

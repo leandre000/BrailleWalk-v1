@@ -14,7 +14,7 @@ import ScannerFrame from '@/components/ScannerFrame';
 import { matchCommand, getSuggestions, SCAN_COMMANDS } from '@/utils/commandMatcher';
 import { speechManager } from '@/utils/speechManager';
 
-type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result';
+type ScanState = 'idle' | 'scanning' | 'analyzing' | 'result' | 'exit';
 type ScanMode = 'auto' | 'text' | 'object' | 'barcode';
 
 interface ScanResult {
@@ -46,6 +46,7 @@ export default function ScanScreen() {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoScanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isExitingRef = useRef(false);
 
   const mockTextResults = [
     'Stop sign ahead. Please be careful.',
@@ -71,7 +72,7 @@ export default function ScanScreen() {
       if (!permission) {
         return;
       }
-      
+
       if (!permission.granted) {
         const result = await requestPermission();
         console.log('Camera permission result:', result);
@@ -115,12 +116,12 @@ export default function ScanScreen() {
 
   const handleScan = async () => {
     if (scanState === 'scanning' || scanState === 'analyzing') return;
-    
+
     setScanState('scanning');
-    
+
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
         speechManager.speak('Scanning', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
@@ -142,12 +143,14 @@ export default function ScanScreen() {
 
     setTimeout(async () => {
       setScanState('analyzing');
-      
+
       setTimeout(() => {
+        console.log(scanState)
+        if (scanState === 'exit' || isExitingRef.current) return;
         const scanResult = performAIAnalysis();
         setResult(scanResult.content);
         setScanState('result');
-        
+
         const newResult: ScanResult = {
           type: scanResult.type,
           content: scanResult.content,
@@ -155,17 +158,17 @@ export default function ScanScreen() {
           timestamp: Date.now()
         };
         setScanResults(prev => [newResult, ...prev.slice(0, 4)]);
-        
+
         if (Platform.OS !== 'web') {
           try {
             if (scanResult.confidence > 0.8) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
             } else {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
             }
-            
+
             // Reduced speech - just the result, wait for it to finish
-            speechManager.speak(scanResult.content, { 
+            speechManager.speak(scanResult.content, {
               rate: 1
             }, () => {
               console.log('Speech finished, resetting to idle in 1s');
@@ -206,7 +209,9 @@ export default function ScanScreen() {
   // Continuous scanning - automatically starts when idle
   useEffect(() => {
     console.log('State:', scanState, 'Permission:', permission?.granted);
-    
+    if (scanState === 'exit') {
+      return
+    }
     if (scanState === 'idle' && permission?.granted) {
       console.log('Starting scan in 2 seconds...');
       scanTimeoutRef.current = setTimeout(() => {
@@ -266,19 +271,19 @@ export default function ScanScreen() {
 
   const handleModeChange = (mode: ScanMode) => {
     setScanMode(mode);
-    
+
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Haptics not available:', error);
       }
     }
-    
+
     // Reduced speech - just mode name
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(`${mode} mode`, { rate: 1 });
+        speechManager.speak(`Switched to ${mode} mode`, { rate: 1 });
       } catch (error) {
         console.log('Speech not available:', error);
       }
@@ -300,10 +305,21 @@ export default function ScanScreen() {
       clearTimeout(autoScanTimeoutRef.current);
       autoScanTimeoutRef.current = null;
     }
-    
+    speechManager.stop();
+    [scanTimeoutRef, resultTimeoutRef, autoScanTimeoutRef].forEach(ref => {
+      if (ref.current) {
+        clearTimeout(ref.current);
+        ref.current = null;
+      }
+    });
+    isExitingRef.current = true;
+    setScanState('exit');
+    setResult('');
+    setCapturedImage(null);
+    setAutoScan(true);
     if (Platform.OS !== 'web') {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
         speechManager.speak('Exiting', { rate: 1 });
       } catch (error) {
         console.log('Native modules not available:', error);
@@ -315,10 +331,10 @@ export default function ScanScreen() {
   const handleVoiceCommand = (command: string, confidence?: number) => {
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, SCAN_COMMANDS, 0.6);
-    
+
     if (match) {
       console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
-      
+
       // Handle matched command
       if (match.command === 'scan') {
         handleScan();
@@ -348,18 +364,18 @@ export default function ScanScreen() {
     } else {
       // Command not recognized - provide helpful suggestions
       const suggestions = getSuggestions(command, SCAN_COMMANDS, 3);
-      
+
       let errorMessage = "I didn't understand that. ";
       if (suggestions.length > 0) {
         errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
       } else {
         errorMessage += "Try saying: scan, text mode, object mode, or exit.";
       }
-      
+
       if (Platform.OS !== 'web') {
         speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
-      
+
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
@@ -378,7 +394,7 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <GradientBackground>
-        <View 
+        <View
           className="flex-1 items-center justify-center px-6"
           style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
         >
@@ -389,8 +405,8 @@ export default function ScanScreen() {
               BrailleWalk needs camera access to scan text and identify objects for you.
             </Text>
           </View>
-          <TouchableOpacity 
-            className="bg-white py-4 px-8 rounded-full" 
+          <TouchableOpacity
+            className="bg-white py-4 px-8 rounded-full"
             onPress={requestPermission}
             accessibilityLabel="Grant camera permission"
           >
@@ -403,7 +419,7 @@ export default function ScanScreen() {
 
   return (
     <GradientBackground>
-      <View 
+      <View
         className="flex-1 gap-y-4"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
@@ -417,42 +433,36 @@ export default function ScanScreen() {
 
           <View className="flex-row gap-3  px-4">
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
-                scanMode === 'auto' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
-              }`}
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${scanMode === 'auto' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
+                }`}
               onPress={() => handleModeChange('auto')}
               accessibilityLabel="Auto mode"
             >
               <MaterialIcons name="flash-auto" size={18} color={scanMode === 'auto' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-sm font-semibold ${
-                scanMode === 'auto' ? 'text-blue-900' : 'text-white'
-              }`}>Auto</Text>
+              <Text className={`text-sm font-semibold ${scanMode === 'auto' ? 'text-blue-900' : 'text-white'
+                }`}>Auto</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
-                scanMode === 'text' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
-              }`}
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${scanMode === 'text' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
+                }`}
               onPress={() => handleModeChange('text')}
               accessibilityLabel="Text mode"
             >
               <MaterialIcons name="text-fields" size={18} color={scanMode === 'text' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-sm font-semibold ${
-                scanMode === 'text' ? 'text-blue-900' : 'text-white'
-              }`}>Text</Text>
+              <Text className={`text-sm font-semibold ${scanMode === 'text' ? 'text-blue-900' : 'text-white'
+                }`}>Text</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${
-                scanMode === 'object' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
-              }`}
+              className={`flex-1 flex-row items-center justify-center gap-2 py-3 px-4 rounded-full border-2 ${scanMode === 'object' ? 'bg-white border-white' : 'bg-white/10 border-white/30'
+                }`}
               onPress={() => handleModeChange('object')}
               accessibilityLabel="Object mode"
             >
               <MaterialIcons name="view-in-ar" size={18} color={scanMode === 'object' ? '#0047AB' : '#FFFFFF'} />
-              <Text className={`text-sm font-semibold ${
-                scanMode === 'object' ? 'text-blue-900' : 'text-white'
-              }`}>Object</Text>
+              <Text className={`text-sm font-semibold ${scanMode === 'object' ? 'text-blue-900' : 'text-white'
+                }`}>Object</Text>
             </TouchableOpacity>
           </View>
 
@@ -460,17 +470,17 @@ export default function ScanScreen() {
             {scanState === 'result' ? (
               <View className="flex-1 items-center justify-center bg-black">
                 {capturedImage ? (
-                  <Image 
-                    source={{ uri: capturedImage }} 
+                  <Image
+                    source={{ uri: capturedImage }}
                     className="w-full h-full"
                     resizeMode="cover"
                   />
                 ) : (
                   <View className="w-full h-full items-center justify-center bg-white">
-                    <MaterialIcons 
-                      name={scanResults[0]?.type === 'text' ? 'text-fields' : 'view-in-ar'} 
-                      size={100} 
-                      color="#0047AB" 
+                    <MaterialIcons
+                      name={scanResults[0]?.type === 'text' ? 'text-fields' : 'view-in-ar'}
+                      size={100}
+                      color="#0047AB"
                     />
                   </View>
                 )}
@@ -519,9 +529,9 @@ export default function ScanScreen() {
         </View>
 
         <View className="items-center gap-4">
-          
+
           <Waveform isActive={scanState === 'scanning' || scanState === 'analyzing'} />
-          
+
           <TouchableOpacity
             onPress={handleQuit}
             className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"

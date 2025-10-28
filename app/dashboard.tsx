@@ -58,7 +58,7 @@ export default function DashboardScreen() {
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(welcomeMessage, { rate: 1 });
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       } catch (error) {
         console.log('Speech/Haptics not available:', error);
       }
@@ -73,23 +73,24 @@ export default function DashboardScreen() {
   }, []);
 
   const handleFeaturePress = (feature: DashboardFeature) => {
+    speechManager.stop();
     setSelectedFeature(feature.id);
-    
+
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     }
 
     const featureMessage =
       feature.id === 'navigate'
         ? 'Starting navigation.'
         : feature.id === 'scan'
-        ? 'Starting scan mode.'
-        : 'Starting emergency mode.';
+          ? 'Starting scan mode.'
+          : 'Starting emergency mode.';
 
     if (Platform.OS !== 'web') {
       try {
-        speechManager.speak(featureMessage, { 
-          rate: 1, 
+        speechManager.speak(featureMessage, {
+          rate: 1,
           language: 'en-US'
         }, () => {
           // Route immediately after speech finishes
@@ -111,12 +112,13 @@ export default function DashboardScreen() {
   };
 
   const handleRepeatInstructions = () => {
+    speechManager.stop();
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     }
-    
+
     const instructionsMessage = 'Available options: navigate, scan, or emergency.';
-    
+
     if (Platform.OS !== 'web') {
       try {
         speechManager.speak(instructionsMessage, { rate: 1, language: 'en-US' });
@@ -129,11 +131,11 @@ export default function DashboardScreen() {
   const handleVoiceCommand = (command: string, confidence?: number) => {
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, GLOBAL_COMMANDS, 0.6);
-    
+
     if (match) {
       // Log for debugging
       console.log(`Matched: ${match.command} (confidence: ${match.confidence}, heard: "${match.matchedPhrase}")`);
-      
+
       // Handle matched command
       if (match.command === 'navigate') {
         const navFeature = features.find(f => f.id === 'navigate');
@@ -162,25 +164,25 @@ export default function DashboardScreen() {
     } else {
       // Command not recognized - provide helpful suggestions
       const suggestions = getSuggestions(command, GLOBAL_COMMANDS, 3);
-      
+
       let errorMessage = "I didn't understand that. ";
       if (suggestions.length > 0) {
         errorMessage += `Did you mean: ${suggestions.slice(0, 2).join(', or ')}?`;
       } else {
         errorMessage += "Try saying: navigate, scan, or emergency.";
       }
-      
+
       if (Platform.OS !== 'web') {
         speechManager.speak(errorMessage, { rate: 1, language: 'en-US' });
       }
-      
+
       console.log(`Command not recognized: "${command}". Suggestions: ${suggestions.join(', ')}`);
     }
   };
 
   return (
     <GradientBackground>
-      <View 
+      <View
         className="flex-1"
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
       >
@@ -196,14 +198,13 @@ export default function DashboardScreen() {
             {features.map((feature) => (
               <TouchableOpacity
                 key={feature.id}
-                className={`items-center ${
-                  selectedFeature === feature.id ? 'opacity-70' : 'opacity-100'
-                }`}
+                className={`items-center ${selectedFeature === feature.id ? 'opacity-70' : 'opacity-100'
+                  }`}
                 onPress={() => handleFeaturePress(feature)}
                 accessibilityLabel={feature.title}
                 accessibilityHint={feature.description}
               >
-                <View 
+                <View
                   className="w-24 h-24 rounded-full bg-white items-center justify-center mb-3 border-4"
                   style={{ borderColor: selectedFeature === feature.id ? feature.color : 'transparent' }}
                 >
