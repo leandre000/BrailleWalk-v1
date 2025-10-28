@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BrailleWalk",
-    "slug": "braillewalk",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -92,9 +92,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "e1a3df4c-1562-4e06-9f15-ade8c37c1811"
+        "projectId": "6bc46fc7-5d4d-46a2-926a-1ced2da32b41"
       }
     },
-    "owner": "wigothehacker"
+    "owner": "braillewalk"
   }
 }

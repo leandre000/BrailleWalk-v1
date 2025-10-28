@@ -1,8 +1,3 @@
-/**
- * Voice Command Matcher with Fuzzy Matching and Alternative Phrasings
- * Supports mispronunciations and natural language variations
- */
-
 import { findBestMatch, containsFuzzy, fuzzyMatchPhonetic } from './fuzzyMatch';
 
 export interface CommandMatch {
@@ -18,9 +13,6 @@ export interface CommandDefinition {
   description: string;
 }
 
-/**
- * Global command definitions with alternative phrasings
- */
 export const GLOBAL_COMMANDS: CommandDefinition[] = [
   {
     command: 'navigate',
@@ -49,9 +41,6 @@ export const GLOBAL_COMMANDS: CommandDefinition[] = [
   },
 ];
 
-/**
- * Navigation-specific commands
- */
 export const NAVIGATION_COMMANDS: CommandDefinition[] = [
   {
     command: 'pause',
@@ -75,9 +64,6 @@ export const NAVIGATION_COMMANDS: CommandDefinition[] = [
   },
 ];
 
-/**
- * Scan mode commands
- */
 export const SCAN_COMMANDS: CommandDefinition[] = [
   {
     command: 'scan',
@@ -116,9 +102,6 @@ export const SCAN_COMMANDS: CommandDefinition[] = [
   },
 ];
 
-/**
- * Emergency mode commands
- */
 export const EMERGENCY_COMMANDS: CommandDefinition[] = [
   {
     command: 'call_first',
@@ -137,9 +120,6 @@ export const EMERGENCY_COMMANDS: CommandDefinition[] = [
   },
 ];
 
-/**
- * Match a voice command against a list of command definitions
- */
 export function matchCommand(
   input: string,
   commands: CommandDefinition[],
