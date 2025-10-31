@@ -42,6 +42,7 @@ export default function ScanScreen() {
   const [detectedObjects, setDetectedObjects] = useState<DetectedObject[]>([]);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [autoScan, setAutoScan] = useState<boolean>(true);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   const cameraRef = React.useRef<any>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,6 +110,7 @@ export default function ScanScreen() {
       setResult('');
       setCapturedImage(null);
       setAutoScan(true);
+      setIsPaused(false);
       // Stop speech
       speechManager.stop();
     };
@@ -122,7 +124,7 @@ export default function ScanScreen() {
     if (Platform.OS !== 'web') {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
-        speechManager.speak('Scanning', { rate: 1 });
+        // Remove "Scanning" speech to reduce noise
       } catch (error) {
         console.log('Native modules not available:', error);
       }
@@ -206,26 +208,27 @@ export default function ScanScreen() {
     }, 1500);
   };
 
-  // Continuous scanning - automatically starts when idle
+  // Continuous scanning - automatically starts when idle and not paused
   useEffect(() => {
-    console.log('State:', scanState, 'Permission:', permission?.granted);
+    console.log('State:', scanState, 'Permission:', permission?.granted, 'Paused:', isPaused);
     if (scanState === 'exit') {
       return
     }
-    if (scanState === 'idle' && permission?.granted) {
-      console.log('Starting scan in 2 seconds...');
+    if (scanState === 'idle' && permission?.granted && !isPaused) {
+      console.log('Starting scan in 6 seconds...');
       scanTimeoutRef.current = setTimeout(() => {
         console.log('Triggering handleScan');
         handleScan();
-      }, 2000) as ReturnType<typeof setTimeout>;
+      }, 6000) as ReturnType<typeof setTimeout>;
     }
 
     return () => {
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
       }
     };
-  }, [scanState, permission]);
+  }, [scanState, permission, isPaused]);
 
   const performAIAnalysis = () => {
     switch (scanMode) {
@@ -328,7 +331,68 @@ export default function ScanScreen() {
     router.back();
   };
 
+  const handlePauseResume = () => {
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
+    
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
+
+    if (newPausedState) {
+      // Now pausing - stop any ongoing speech first
+      speechManager.stop();
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+      if (Platform.OS !== 'web') {
+        try {
+          speechManager.speak('Scanning paused', { rate: 1 });
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
+    } else {
+      // Now resuming
+      if (Platform.OS !== 'web') {
+        try {
+          speechManager.speak('Scanning resumed', { rate: 1 });
+        } catch (error) {
+          console.log('Speech not available:', error);
+        }
+      }
+    }
+  };
+
   const handleVoiceCommand = (command: string, confidence?: number) => {
+    // Priority handling for pause/resume commands - process immediately
+    const lowerCommand = command.toLowerCase().trim();
+    if (lowerCommand.includes('pause') || lowerCommand.includes('stop')) {
+      if (!isPaused) {
+        handlePauseResume();
+        return;
+      }
+    }
+    if (lowerCommand.includes('resume') || lowerCommand.includes('continue')) {
+      if (isPaused) {
+        handlePauseResume();
+        return;
+      }
+    }
+    
+    // Handle natural scan commands
+    if (lowerCommand.includes('look at that') || lowerCommand.includes('tell me') || 
+        lowerCommand.includes('what is this') || lowerCommand.includes('what do you see') ||
+        lowerCommand.includes('describe') || lowerCommand.includes('identify')) {
+      handleScan();
+      return;
+    }
+
     // Use fuzzy matching to find the best command match
     const match = matchCommand(command, SCAN_COMMANDS, 0.6);
 
@@ -356,6 +420,16 @@ export default function ScanScreen() {
         if (autoScan) {
           setAutoScan(false);
           speechManager.speak('Manual mode', { rate: 1, language: 'en-US' });
+        }
+      }
+      else if (match.command === 'pause') {
+        if (!isPaused) {
+          handlePauseResume();
+        }
+      }
+      else if (match.command === 'resume') {
+        if (isPaused) {
+          handlePauseResume();
         }
       }
       else if (match.command === 'exit') {
@@ -421,7 +495,7 @@ export default function ScanScreen() {
     <GradientBackground>
       <View
         className="flex-1 gap-y-4"
-        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }}
       >
         <View className="items-center gap-y-2">
           <Text className="text-5xl font-bold text-white ">BrailleWalk</Text>
@@ -530,16 +604,28 @@ export default function ScanScreen() {
 
         <View className="items-center gap-4">
 
-          <Waveform isActive={scanState === 'scanning' || scanState === 'analyzing'} />
+          <Waveform isActive={scanState === 'scanning' || scanState === 'analyzing' && !isPaused} />
 
-          <TouchableOpacity
-            onPress={handleQuit}
-            className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
-            accessibilityLabel="Quit scanning"
-            accessibilityHint="Exit scanning mode"
-          >
-            <Text className="text-base text-white font-semibold">Exit Scanning</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-4">
+            <TouchableOpacity
+              onPress={handlePauseResume}
+              className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
+              accessibilityLabel={isPaused ? "Resume scanning" : "Pause scanning"}
+              accessibilityHint={isPaused ? "Resume automatic scanning" : "Pause automatic scanning"}
+            >
+              {isPaused ? <MaterialIcons name="play-arrow" size={22} color="#FFFFFF" /> : <MaterialIcons name="pause" size={22} color="#FFFFFF" />}
+              <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleQuit}
+              className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
+              accessibilityLabel="Quit scanning"
+              accessibilityHint="Exit scanning mode"
+            >
+              <Text className="text-base text-white font-semibold">Exit Scanning</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Voice Command Listener */}
@@ -548,6 +634,7 @@ export default function ScanScreen() {
           enabled={true}
           continuousMode={true}
           showVisualFeedback={true}
+          confirmBeforeExecute={false}
         />
       </View>
     </GradientBackground>

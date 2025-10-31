@@ -198,7 +198,7 @@ export default function AuthScreen() {
     <GradientBackground>
       <TouchableOpacity
         style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
-        className="flex-1"
+        className="flex-1 pb-20"
         onPress={handleAuthenticate}
         disabled={authState === 'authenticating' || authState === 'success'}
         activeOpacity={0.9}

@@ -159,7 +159,7 @@ export default function DashboardScreen() {
         handleRepeatInstructions();
       }
       else if (match.command === 'back') {
-        router.back();
+        router.replace('/');
       }
     } else {
       // Command not recognized - provide helpful suggestions
