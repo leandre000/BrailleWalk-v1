@@ -148,7 +148,7 @@ export default function NavigateScreen() {
           }, () => {
             // Wait 1 second after speech finishes, then next instruction
             instructionIndex++;
-            speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
+            speechTimeoutRef.current = setTimeout(processInstruction, 3000) as ReturnType<typeof setTimeout>;
           });
         } catch (error) {
           console.log('Native modules not available:', error);

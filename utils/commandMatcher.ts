@@ -96,6 +96,16 @@ export const SCAN_COMMANDS: CommandDefinition[] = [
     description: 'Switch to manual mode'
   },
   {
+    command: 'pause',
+    aliases: ['pause', 'stop', 'wait', 'hold', 'hold on'],
+    description: 'Pause scanning'
+  },
+  {
+    command: 'resume',
+    aliases: ['resume', 'continue', 'go', 'start', 'proceed', 'keep going'],
+    description: 'Resume scanning'
+  },
+  {
     command: 'exit',
     aliases: ['exit', 'quit', 'back', 'close', 'done', 'finish'],
     description: 'Exit scan mode'
