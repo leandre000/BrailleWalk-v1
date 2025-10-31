@@ -4,16 +4,16 @@
   "description": "BrailleWalk - AI-powered assistive technology for visually impaired individuals",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
+    "start": "node init && expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build:android": "eas build --platform android",
-    "build:ios": "eas build --platform ios",
-    "build:all": "eas build --platform all"
+    "build:android": "node init && eas build --platform android",
+    "build:ios": "node init && eas build --platform ios",
+    "build:all": "node init && eas build --platform all"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
