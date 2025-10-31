@@ -262,7 +262,7 @@ export default function VoiceCommandListener({
             // Max retries reached - stop retrying completely
             console.error('Max retries reached. Speech recognition disabled until next restart.');
             setRetryCount(0); // Reset for next time
-            
+
             // Don't retry automatically - wait for next user interaction or restart
         }
     });
@@ -428,7 +428,7 @@ export default function VoiceCommandListener({
     }
 
     return (
-        <View className="absolute bottom-8 right-8 items-center">
+        <View className="absolute bottom-16 right-4 items-center">
             {/* Always listening indicator with pulse animation */}
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <View
@@ -449,27 +449,10 @@ export default function VoiceCommandListener({
                 </View>
             </Animated.View>
 
-            {/* Status indicator */}
-            {continuousMode && isListening && !isPausedForSpeech && !isWaitingForCommand && !networkError && (
-                <View className="mt-2 px-3 py-1 bg-green-500/80 rounded-full">
-                    <Text className="text-white text-xs font-semibold">
-                        Ready - Just Speak
-                    </Text>
-                </View>
-            )}
-
             {networkError && (
                 <View className="mt-2 px-3 py-1 bg-red-500/80 rounded-full">
                     <Text className="text-white text-xs font-semibold">
                         No Network
-                    </Text>
-                </View>
-            )}
-
-            {isPausedForSpeech && (
-                <View className="mt-2 px-3 py-1 bg-gray-500/80 rounded-full">
-                    <Text className="text-white text-xs font-semibold">
-                        App Speaking...
                     </Text>
                 </View>
             )}
@@ -479,28 +462,6 @@ export default function VoiceCommandListener({
                     <Text className="text-white text-xs font-semibold">
                         Listening for "{wakeWord}"
                     </Text>
-                </View>
-            )}
-
-            {isWaitingForCommand && (
-                <View className="mt-2 px-3 py-1 bg-red-500/80 rounded-full">
-                    <Text className="text-white text-xs font-semibold">
-                        Speak now...
-                    </Text>
-                </View>
-            )}
-
-            {/* Debug: Show recognized text with confidence */}
-            {recognizedText && isWaitingForCommand && (
-                <View className="mt-2 px-3 py-1 bg-gray-800/80 rounded-lg max-w-xs">
-                    <Text className="text-white text-xs">
-                        {recognizedText}
-                    </Text>
-                    {confidence > 0 && (
-                        <Text className="text-gray-400 text-xs mt-1">
-                            {Math.round(confidence * 100)}% confident
-                        </Text>
-                    )}
                 </View>
             )}
         </View>

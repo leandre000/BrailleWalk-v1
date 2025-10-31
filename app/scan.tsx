@@ -495,7 +495,7 @@ export default function ScanScreen() {
     <GradientBackground>
       <View
         className="flex-1 gap-y-4"
-        style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }}
+        style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }}
       >
         <View className="items-center gap-y-2">
           <Text className="text-5xl font-bold text-white ">BrailleWalk</Text>
@@ -606,24 +606,26 @@ export default function ScanScreen() {
 
           <Waveform isActive={scanState === 'scanning' || scanState === 'analyzing' && !isPaused} />
 
-          <TouchableOpacity
-            onPress={handlePauseResume}
-            className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
-            accessibilityLabel={isPaused ? "Resume scanning" : "Pause scanning"}
-            accessibilityHint={isPaused ? "Resume automatic scanning" : "Pause automatic scanning"}
-          >
-            {isPaused ? <MaterialIcons name="play-arrow" size={22} color="#FFFFFF" /> : <MaterialIcons name="pause" size={22} color="#FFFFFF" />}
-            <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-4">
+            <TouchableOpacity
+              onPress={handlePauseResume}
+              className="flex-row items-center gap-2 py-3 px-5 bg-white/10 rounded-full border border-white/20"
+              accessibilityLabel={isPaused ? "Resume scanning" : "Pause scanning"}
+              accessibilityHint={isPaused ? "Resume automatic scanning" : "Pause automatic scanning"}
+            >
+              {isPaused ? <MaterialIcons name="play-arrow" size={22} color="#FFFFFF" /> : <MaterialIcons name="pause" size={22} color="#FFFFFF" />}
+              <Text className="text-sm text-white font-medium">{isPaused ? 'Resume' : 'Pause'}</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleQuit}
-            className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
-            accessibilityLabel="Quit scanning"
-            accessibilityHint="Exit scanning mode"
-          >
-            <Text className="text-base text-white font-semibold">Exit Scanning</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleQuit}
+              className="py-3 px-8 bg-red-500/20 rounded-full border border-red-500/40"
+              accessibilityLabel="Quit scanning"
+              accessibilityHint="Exit scanning mode"
+            >
+              <Text className="text-base text-white font-semibold">Exit Scanning</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Voice Command Listener */}
