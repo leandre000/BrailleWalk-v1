@@ -108,10 +108,10 @@ export default function NavigateScreen() {
         }
       }
     }
+    navigationSequenceRef.current = true;
   };
 
   const startNavigationSequence = (startIndex: number = 0) => {
-    navigationSequenceRef.current = true;
     let instructionIndex = startIndex;
 
     const processInstruction = () => {
@@ -148,23 +148,23 @@ export default function NavigateScreen() {
             rate: 1,
             language: 'en-US'
           }, () => {
-            // Wait 1 second after speech finishes, then next instruction
+            // Wait 4 seconds after speech finishes to give user time to speak
             instructionIndex++;
             setCurrentInstructionIndex(instructionIndex);
-            speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
+            speechTimeoutRef.current = setTimeout(processInstruction, 4000) as ReturnType<typeof setTimeout>;
           });
         } catch (error) {
           console.log('Native modules not available:', error);
-          // If speech module not available, proceed after 2 seconds
+          // If speech module not available, proceed after 4 seconds to give user time to speak
           instructionIndex++;
           setCurrentInstructionIndex(instructionIndex);
-          speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
+          speechTimeoutRef.current = setTimeout(processInstruction, 4000) as ReturnType<typeof setTimeout>;
         }
       } else {
-        // Web platform - no speech, proceed after 2 seconds
+        // Web platform - no speech, proceed after 4 seconds to give user time to speak
         instructionIndex++;
         setCurrentInstructionIndex(instructionIndex);
-        speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
+        speechTimeoutRef.current = setTimeout(processInstruction, 4000) as ReturnType<typeof setTimeout>;
       }
     };
 
