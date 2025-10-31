@@ -38,6 +38,7 @@ export default function NavigateScreen() {
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [obstacleType, setObstacleType] = useState<ObstacleType>(null);
   const [distanceToDestination, setDistanceToDestination] = useState<number>(0);
+  const [currentInstructionIndex, setCurrentInstructionIndex] = useState<number>(0);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationSequenceRef = useRef<boolean>(false);
 
@@ -75,6 +76,7 @@ export default function NavigateScreen() {
       setDirection(null);
       setIsPaused(false);
       setObstacleType(null);
+      setCurrentInstructionIndex(0);
     };
   }, []);
 
@@ -108,9 +110,9 @@ export default function NavigateScreen() {
     }
   };
 
-  const startNavigationSequence = () => {
+  const startNavigationSequence = (startIndex: number = 0) => {
     navigationSequenceRef.current = true;
-    let instructionIndex = 0;
+    let instructionIndex = startIndex;
 
     const processInstruction = () => {
       if (instructionIndex >= navigationInstructions.length || !navigationSequenceRef.current) return;
@@ -148,17 +150,20 @@ export default function NavigateScreen() {
           }, () => {
             // Wait 1 second after speech finishes, then next instruction
             instructionIndex++;
+            setCurrentInstructionIndex(instructionIndex);
             speechTimeoutRef.current = setTimeout(processInstruction, 1000) as ReturnType<typeof setTimeout>;
           });
         } catch (error) {
           console.log('Native modules not available:', error);
           // If speech module not available, proceed after 2 seconds
           instructionIndex++;
+          setCurrentInstructionIndex(instructionIndex);
           speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
         }
       } else {
         // Web platform - no speech, proceed after 2 seconds
         instructionIndex++;
+        setCurrentInstructionIndex(instructionIndex);
         speechTimeoutRef.current = setTimeout(processInstruction, 2000) as ReturnType<typeof setTimeout>;
       }
     };
@@ -204,7 +209,7 @@ export default function NavigateScreen() {
           console.log('Speech not available:', error);
         }
       }
-      startNavigationSequence();
+      startNavigationSequence(currentInstructionIndex);
     } else {
       speechManager.stop();
       if (Platform.OS !== 'web') {
