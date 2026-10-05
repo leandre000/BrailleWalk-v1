@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "leandre000-patch-1",
+    "main",
+    "origin",
+    "wigothehacker"
+  ],
+  "parent": {
+    "leandre000-patch-1": "main",
+    "main": null,
+    "origin": "main",
+    "wigothehacker": "main"
+  },
+  "order": [
+    "main",
+    "leandre000-patch-1",
+    "origin",
+    "wigothehacker"
+  ]
+}
