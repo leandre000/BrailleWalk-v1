@@ -1,10 +1,10 @@
-# BrailleWalk 🦯
+# BrailleWalk 
 
 **AI-powered assistive technology for visually impaired individuals**
 
 BrailleWalk is an innovative mobile application that combines wearable technology (camera on glasses) and AI-powered computer vision to provide real-time assistance for visually impaired individuals. The app offers navigation guidance, text recognition, object detection, and emergency contact features.
 
-## 🌟 Key Features
+##  Key Features
 
 - **Real-time Navigation Assistance** - AI-powered guidance for safe walking
 - **Text-to-Speech Reader** - Reads signs, documents, and labels aloud
@@ -13,7 +13,7 @@ BrailleWalk is an innovative mobile application that combines wearable technolog
 - **Voice Commands** - Hands-free operation with voice recognition
 - **Accessible Design** - Optimized interface for visually impaired users
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -47,7 +47,7 @@ npm run android # Android Emulator
 npm run web     # Web Browser
 ```
 
-## 📱 App Structure
+##  App Structure
 
 - **Authentication Screen** - Voice/face recognition for secure access
 - **Dashboard** - Main navigation hub with feature selection
@@ -55,7 +55,7 @@ npm run web     # Web Browser
 - **Scan Mode** - Object recognition and text reading capabilities
 - **Emergency Mode** - Contact caregivers with GPS location sharing
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 - **React Native** - Cross-platform mobile development
 - **Expo** - Development platform and tools
@@ -66,7 +66,7 @@ npm run web     # Web Browser
 - **React Navigation** - Screen navigation
 - **Lucide React Native** - Icon library
 
-## 🎯 Target Users
+##  Target Users
 
 - Visually impaired individuals seeking independence
 - Caregivers and families
@@ -92,15 +92,15 @@ BrailleWalk/
 - `react-native-gesture-handler` - Touch interactions
 - `@tanstack/react-query` - State management
 
-## 📄 License
+##  License
 
 MIT License - see LICENSE file for details
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Please see our contributing guidelines for more information.
 
-## 📞 Support
+##  Support
 
 For support and questions, please contact the BrailleWalk team.
 
